@@ -15,7 +15,9 @@ export default function SaaSWorkspacePage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Job Auto-Extraction states
-  const [jobInput, setJobInput] = useState("");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [jobUrl, setJobUrl] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [isExtracted, setIsExtracted] = useState(false);
   const [extractionWarning, setExtractionWarning] = useState<string | null>(null);
@@ -135,8 +137,8 @@ export default function SaaSWorkspacePage() {
 
   // AI role extraction function
   const handleExtractRole = async () => {
-    if (!jobInput.trim()) {
-      alert("Please paste the job description or a portal link first.");
+    if (!jobUrl.trim() && !jobDescription.trim()) {
+      alert("Please provide either a Job URL or a Job Description text.");
       return;
     }
 
@@ -148,7 +150,7 @@ export default function SaaSWorkspacePage() {
       const response = await fetch("/api/extract-job", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: jobInput }),
+        body: JSON.stringify({ url: jobUrl, text: jobDescription }),
       });
 
       if (!response.ok) {
@@ -162,12 +164,13 @@ export default function SaaSWorkspacePage() {
       setExtractedCompany(data.companyName || "Unknown");
       setExtractedTitle(data.jobTitle || "Unknown Position");
       setExtractedJobId(data.jobId || "N/A");
-      setExtractedJd(data.cleanJobDescription || jobInput);
+      setExtractedJd(data.cleanJobDescription || jobDescription || jobUrl);
       
       if (data.warning) {
         setExtractionWarning(data.warning);
       }
       setIsExtracted(true);
+      setIsDrawerOpen(false); // Close drawer on success
     } catch (err: any) {
       console.error(err);
       alert(`Role analysis error: ${err.message || "Failed to parse details."}`);
@@ -285,107 +288,102 @@ export default function SaaSWorkspacePage() {
         {/* Left Control Panel (5 Columns) */}
         <section className="lg:col-span-5 flex flex-col gap-6">
           
-          {/* Master Job Analyzer Card */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl flex flex-col gap-5">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <h2 className="font-semibold text-sm text-slate-200 tracking-wide uppercase">AI Role Auto-Extractor</h2>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-slate-400 font-mono">Job Description Text or Portal Link</label>
-              <textarea
-                placeholder="Paste the target job description text body or drop a portal link (e.g. https://linkedin.com/jobs/...) here..."
-                rows={5}
-                value={jobInput}
-                onChange={(e) => setJobInput(e.target.value)}
-                className="bg-slate-950/80 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 resize-y"
-              />
-            </div>
-
-            <button
-              onClick={handleExtractRole}
-              disabled={isExtracting}
-              className={`w-full py-3 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2 border border-blue-900/30 ${
-                isExtracting
-                  ? "bg-slate-800 text-slate-400 cursor-not-allowed"
-                  : "bg-blue-950/40 text-blue-400 hover:bg-blue-600 hover:text-white transition-all duration-300"
-              }`}
-            >
-              {isExtracting ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                  Analyzing Role...
-                </>
-              ) : (
-                <>
-                  <span>✨</span>
-                  Analyze Role
-                </>
+          {/* Target Position Summary Card */}
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h2 className="font-semibold text-sm text-slate-200 tracking-wide uppercase">Target Position</h2>
+              </div>
+              {isExtracted && (
+                <span className="text-[9px] bg-blue-500/10 text-blue-400 font-mono border border-blue-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  {extractionWarning ? "✨ AI MAP" : "MANUAL"}
+                </span>
               )}
-            </button>
+            </div>
 
-            {/* Editable Metadata Review Panel */}
-            {isExtracted && (
-              <div className="mt-2 border-t border-slate-800/80 pt-4 flex flex-col gap-4 animate-fadeIn">
-                <div className="flex items-center gap-1.5">
-                  <span className={`h-2 w-2 rounded-full ${extractionWarning ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
-                  <span className={`text-[10px] font-mono tracking-widest uppercase ${extractionWarning ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {extractionWarning ? "Metadata Heuristics Active" : "Metadata Extracted"}
-                  </span>
-                </div>
+            {isExtracted ? (
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-bold text-slate-100 leading-snug">
+                  {extractedTitle}
+                </h3>
+                <p className="text-xs text-slate-400 font-medium font-sans">
+                  {extractedCompany} {extractedJobId && extractedJobId !== "N/A" && `· ID: ${extractedJobId}`}
+                </p>
+                <button
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="text-xs text-blue-400 hover:text-blue-300 font-semibold text-left mt-2 flex items-center gap-1 transition w-fit"
+                >
+                  Change target →
+                </button>
 
-                {extractionWarning && (
-                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-[11px] text-amber-400 font-sans leading-relaxed flex flex-col gap-1.5">
-                    <span className="font-bold flex items-center gap-1">
-                      ⚠️ OpenAI API Key Missing / Fallback Active
-                    </span>
-                    <span>{extractionWarning}</span>
+                {/* Collapsible Metadata Editor */}
+                <details className="group mt-2 border-t border-slate-850 pt-3">
+                  <summary className="text-[10px] text-slate-500 hover:text-slate-300 font-mono tracking-widest uppercase cursor-pointer list-none flex items-center justify-between transition">
+                    <span>⚙️ Review / Edit Metadata</span>
+                    <span className="group-open:rotate-180 transition-transform duration-200 text-[8px]">▼</span>
+                  </summary>
+
+                  <div className="flex flex-col gap-4 mt-4 animate-fadeIn">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 font-mono">Company</span>
+                        <input
+                          type="text"
+                          value={extractedCompany}
+                          onChange={(e) => setExtractedCompany(e.target.value)}
+                          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 font-mono">Job ID</span>
+                        <input
+                          type="text"
+                          value={extractedJobId}
+                          onChange={(e) => setExtractedJobId(e.target.value)}
+                          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-slate-500 font-mono">Job Title</span>
+                      <input
+                        type="text"
+                        value={extractedTitle}
+                        onChange={(e) => setExtractedTitle(e.target.value)}
+                        className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-sans"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-slate-500 font-mono">Clean JD Body</span>
+                      <textarea
+                        rows={5}
+                        value={extractedJd}
+                        onChange={(e) => setExtractedJd(e.target.value)}
+                        className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 resize-y font-sans leading-relaxed"
+                      />
+                    </div>
                   </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] text-slate-500 font-mono">Company</span>
-                    <input
-                      type="text"
-                      value={extractedCompany}
-                      onChange={(e) => setExtractedCompany(e.target.value)}
-                      className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] text-slate-500 font-mono">Job ID</span>
-                    <input
-                      type="text"
-                      value={extractedJobId}
-                      onChange={(e) => setExtractedJobId(e.target.value)}
-                      className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-slate-500 font-mono">Job Title</span>
-                  <input
-                    type="text"
-                    value={extractedTitle}
-                    onChange={(e) => setExtractedTitle(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-slate-500 font-mono">Clean JD Body</span>
-                  <textarea
-                    rows={4}
-                    value={extractedJd}
-                    onChange={(e) => setExtractedJd(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 resize-y"
-                  />
-                </div>
+                </details>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 py-2 text-center items-center">
+                <svg className="w-8 h-8 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-xs text-slate-500 max-w-xs leading-relaxed font-sans">
+                  No role targeted yet. Connect a job link or copy-paste the description.
+                </p>
+                <button
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="text-xs bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 font-bold border border-blue-500/20 px-4 py-2 rounded-lg transition active:scale-95 duration-200 cursor-pointer"
+                >
+                  ✨ Map a Role
+                </button>
               </div>
             )}
           </div>
@@ -721,6 +719,109 @@ export default function SaaSWorkspacePage() {
               By proceeding, you agree to our Terms of Service & Privacy Policy. 
               We never share your portfolio data with third-party aggregators.
             </p>
+          </div>
+        </div>
+      )}
+      {/* Sliding Map-the-Role Drawer Panel */}
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Blur Backdrop overlay with slow fade-in */}
+          <div 
+            onClick={() => setIsDrawerOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-fadeIn"
+          />
+
+          {/* Sliding Panel Container */}
+          <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-md bg-slate-950 border-l border-slate-800/80 shadow-2xl flex flex-col p-8 relative animate-slideLeft h-full">
+              
+              {/* Close Button */}
+              <button
+                onClick={() => setIsDrawerOpen(false)}
+                className="absolute top-6 right-6 text-slate-500 hover:text-slate-300 p-1.5 rounded-lg transition hover:bg-slate-900/60 cursor-pointer"
+                title="Close drawer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Drawer Content Body */}
+              <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-1">
+                {/* Header Typography */}
+                <div className="flex flex-col gap-2 border-b border-slate-800/60 pb-5">
+                  <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Target Position Profile</span>
+                  <h3 className="text-xl font-extrabold text-slate-100 tracking-tight uppercase font-mono bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">
+                    Map the Role
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans mt-1">
+                    Paste anything — messy job posts, LinkedIn dumps, careers-page text. We'll structure it.
+                  </p>
+                </div>
+
+                {/* Form Fields */}
+                <div className="flex flex-col gap-5">
+                  {/* Job URL Input */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs text-slate-400 font-mono tracking-wide uppercase">Job URL (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="https://careers.example.com/role"
+                      value={jobUrl}
+                      onChange={(e) => setJobUrl(e.target.value)}
+                      className="bg-slate-900/40 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all duration-200 font-mono"
+                    />
+                  </div>
+
+                  {/* Job Description Textarea */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs text-slate-400 font-mono tracking-wide uppercase">Or Paste Job Description</label>
+                    <textarea
+                      placeholder="Paste the full job description here..."
+                      rows={14}
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      className="bg-slate-900/40 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all duration-200 font-sans resize-none leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                {/* Heuristic Notice in Drawer (Optional review) */}
+                {isExtracted && extractionWarning && (
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-[11px] text-amber-400 font-sans leading-relaxed flex flex-col gap-1.5">
+                    <span className="font-bold flex items-center gap-1">
+                      ⚠️ Heuristic Fallback Active
+                    </span>
+                    <span>{extractionWarning}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Fixed Footer with Map Action Button */}
+              <div className="border-t border-slate-800/60 pt-6 mt-4 flex flex-col gap-3">
+                <button
+                  onClick={handleExtractRole}
+                  disabled={isExtracting}
+                  className={`w-full py-4 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all duration-300 uppercase cursor-pointer ${
+                    isExtracting
+                      ? "bg-slate-800 text-slate-500 cursor-not-allowed shadow-none"
+                      : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/10 hover:shadow-emerald-500/25 active:scale-[0.99]"
+                  }`}
+                >
+                  {isExtracting ? (
+                    <>
+                      <div className="h-4.5 w-4.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div>
+                      Structuring Role...
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span>
+                      Analyze & Map Role
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
