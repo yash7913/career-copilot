@@ -12,6 +12,7 @@ interface UploadedFile {
 
 export default function SaaSWorkspacePage() {
   // Authentication states
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Job Auto-Extraction states
@@ -248,37 +249,272 @@ export default function SaaSWorkspacePage() {
     document.body.removeChild(link);
   };
 
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500/25 selection:text-amber-250">
+        {/* Sticky Header Navbar */}
+        <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/60 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Logo circle matching the screenshot */}
+            <div className="h-7 w-7 rounded-full bg-[#EAE5D8] flex items-center justify-center shadow-inner relative">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-950"></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xs font-bold tracking-widest text-[#EAE5D8] uppercase font-mono">
+                Career Co-Pilot
+              </h1>
+              <span className="text-[10px] text-slate-700 font-mono">/</span>
+              <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase">
+                = V0.1 - BETA =
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <span className="hidden md:inline text-[9px] text-slate-500 font-mono uppercase tracking-widest">
+              = Powered by GPT-5.2 =
+            </span>
+            <button
+              onClick={() => setIsLoggedIn(true)}
+              className="text-xs font-bold font-mono tracking-wide text-slate-200 border border-slate-800 hover:border-slate-600 hover:text-white px-5 py-2 rounded-full shadow-md bg-transparent transition active:scale-95 duration-200 cursor-pointer"
+            >
+              Sign In
+            </button>
+          </div>
+        </header>
+
+        {/* Hero Section Split Layout */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left Hero Box (7 columns) */}
+          <div className="lg:col-span-7 flex flex-col gap-8">
+            <div className="flex flex-col gap-6">
+              {/* Top Tag */}
+              <div className="w-fit">
+                <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
+                  = ◆ Career, Refined =
+                </span>
+              </div>
+
+              {/* Serif Title Headline with warm italics */}
+              <h2 className="text-5xl md:text-6.5xl font-normal text-slate-100 font-serif leading-[1.08] tracking-tight max-w-xl">
+                Your career, <br />
+                <span className="text-[#EAE5D8] italic font-serif pr-2">re-engineered</span> <br />
+                per application.
+              </h2>
+
+              {/* Subheadline Copy */}
+              <p className="text-sm md:text-base text-slate-400 leading-relaxed font-sans max-w-lg mt-2">
+                Drop your portfolio. Paste a job. Watch a tailored résumé and cover letter assemble in seconds — with an honest read on where you fit and what's missing.
+              </p>
+            </div>
+
+            {/* Auth CTA pill button */}
+            <div className="flex flex-wrap items-center gap-6 mt-2">
+              <button
+                onClick={() => setIsLoggedIn(true)}
+                className="px-8 py-4 bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 font-bold text-xs tracking-wider rounded-full shadow-xl shadow-white/5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-3 cursor-pointer"
+              >
+                Continue with Google
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+
+              <span className="text-[9px] text-slate-500 font-mono tracking-widest uppercase">
+                = 7-Day Session · No Card Required =
+              </span>
+            </div>
+
+            {/* Bottom Statistics Row */}
+            <div className="bg-slate-900/30 border border-slate-900 rounded-2xl p-6 md:p-8 mt-6 max-w-xl shadow-lg">
+              <div className="grid grid-cols-3 gap-6 text-center divide-x divide-slate-900">
+                <div className="flex flex-col gap-2.5">
+                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#EAE5D8]">≤ 38s</span>
+                  <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase font-semibold">
+                    = From Upload to Draft =
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2.5 pl-4">
+                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#EAE5D8]">100%</span>
+                  <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase font-semibold">
+                    = ATS-Aligned Formatting =
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2.5 pl-4">
+                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#EAE5D8]">GPT-5.2</span>
+                  <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase font-semibold">
+                    = Latest OpenAI Reasoning =
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Hero Image / Vector geometric canvas (5 columns) */}
+          <div className="lg:col-span-5 relative w-full flex items-center justify-center min-h-[400px]">
+            {/* SVG Geometric Node Network */}
+            <div className="w-full h-full opacity-60 hover:opacity-85 transition-opacity duration-500 relative">
+              <svg className="w-full h-full max-h-[500px]" viewBox="0 0 500 500" fill="none">
+                <defs>
+                  <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <circle cx="250" cy="250" r="220" fill="url(#glow)" className="animate-pulse" />
+                <g className="origin-center animate-[spin_85s_linear_infinite]">
+                  {/* Nodes wireframe lines */}
+                  <polygon points="250,80 120,200 380,200" stroke="#334155" strokeWidth="1" strokeDasharray="3,3" />
+                  <polygon points="120,200 180,380 320,380" stroke="#334155" strokeWidth="1" />
+                  <polygon points="380,200 320,380 250,80" stroke="#475569" strokeWidth="1" />
+                  <line x1="250" y1="80" x2="180" y2="380" stroke="#1e293b" strokeWidth="1.5" />
+                  <line x1="120" y1="200" x2="320" y2="380" stroke="#1e293b" strokeWidth="1.5" />
+                  <line x1="380" y1="200" x2="180" y2="380" stroke="#334155" strokeWidth="1.2" />
+
+                  {/* Inner polygons */}
+                  <polygon points="250,150 180,250 320,250" stroke="#334155" strokeWidth="0.8" strokeDasharray="4,4" />
+                  <polygon points="180,250 210,320 290,320" stroke="#1e293b" strokeWidth="0.8" />
+                  <polygon points="320,250 290,320 250,150" stroke="#334155" strokeWidth="0.8" />
+
+                  {/* Spheres glowing nodes */}
+                  <circle cx="250" cy="80" r="14" fill="#991b1b" className="animate-pulse" />
+                  <circle cx="250" cy="80" r="6" fill="#ef4444" />
+                  <circle cx="120" cy="200" r="16" fill="#991b1b" />
+                  <circle cx="120" cy="200" r="7" fill="#dc2626" />
+                  <circle cx="380" cy="200" r="18" fill="#991b1b" className="animate-pulse" />
+                  <circle cx="380" cy="200" r="8" fill="#f87171" />
+                  <circle cx="180" cy="380" r="17" fill="#991b1b" />
+                  <circle cx="180" cy="380" r="7.5" fill="#dc2626" />
+                  <circle cx="320" cy="380" r="15" fill="#991b1b" className="animate-pulse" />
+                  <circle cx="320" cy="380" r="6" fill="#ef4444" />
+                </g>
+              </svg>
+            </div>
+
+            {/* Floating Glassmorphism Generation Card */}
+            <div className="absolute top-1/3 left-6 md:-left-12 bg-slate-950/75 backdrop-blur-md border border-slate-900 rounded-xl p-5 shadow-2xl w-[310px] animate-[bounce_4.5s_ease-in-out_infinite] z-10 flex flex-col gap-4 font-mono select-none">
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2.5">
+                <span className="text-[10px] text-slate-500 font-semibold tracking-wider">◆ LIVE GENERATION</span>
+                <span className="flex items-center gap-1.5 text-[9px] text-[#EAE5D8] font-semibold uppercase font-mono">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                  streaming
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2 text-xs text-slate-300">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600 font-mono">match</span>
+                  <span className="text-emerald-400 font-bold font-mono">93%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-650 font-mono">writing experience</span>
+                  <span className="flex items-center gap-0.5">
+                    <span className="h-3 w-1.5 bg-[#EAE5D8] animate-[pulse_0.8s_infinite]"></span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-650 font-mono">gaps</span>
+                  <span className="text-amber-200/90 font-semibold text-right">kubernetes, terraform</span>
+                </div>
+              </div>
+
+              {/* Triple slider metrics */}
+              <div className="flex gap-1.5 mt-1">
+                <div className="h-1 flex-1 bg-slate-900 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-400/80 w-[40%] rounded-full"></div>
+                </div>
+                <div className="h-1 flex-1 bg-slate-900 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-400/80 w-[65%] rounded-full"></div>
+                </div>
+                <div className="h-full bg-[#EAE5D8] w-[90%] rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Bottom Steps Grid (4 Columns) */}
+        <section className="w-full max-w-7xl mx-auto px-6 md:px-8 border-t border-slate-900/60 pt-10 pb-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-amber-200/80 font-mono">01</span>
+            <h4 className="text-md font-bold font-serif text-slate-200">Upload</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-sans">Drop your résumé, projects, and decks.</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-amber-200/80 font-mono">02</span>
+            <h4 className="text-md font-bold font-serif text-slate-200">Target</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-sans">Paste a JD or import from Greenhouse & Lever.</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-amber-200/80 font-mono">03</span>
+            <h4 className="text-md font-bold font-serif text-slate-200">Tailor</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-sans">Watch GPT-5.2 craft your custom kit.</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-amber-200/80 font-mono">04</span>
+            <h4 className="text-md font-bold font-serif text-slate-200">Export</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-sans">Download a polished PDF — apply, repeat.</p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-blue-500/30 selection:text-blue-200">
-      {/* Sticky Header Navbar */}
-      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-900 px-6 py-4 flex items-center justify-between">
+      {/* Sticky Header Navbar Overhauled for Yashwanth P */}
+      <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-900/80 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/10">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+          {/* Circular beige logo matching screenshot */}
+          <div 
+            onClick={() => setIsLoggedIn(false)}
+            className="h-7 w-7 rounded-full bg-[#EAE5D8] flex items-center justify-center shadow-inner relative group cursor-pointer"
+            title="Return to Landing Page"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-950 group-hover:scale-125 transition"></span>
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">
-              Career Copilot
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-xs font-bold tracking-widest text-[#EAE5D8] uppercase font-mono">
+              Career Co-Pilot
             </h1>
-            <p className="text-[10px] text-slate-500 font-mono">WORKSPACE.V1</p>
+            <span className="text-[10px] text-slate-700 font-mono">/</span>
+            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Workspace</span>
+            <span className="text-[10px] text-slate-700 font-mono">/</span>
+            <span className="text-[10px] text-slate-350 font-mono uppercase tracking-wider font-semibold">Yashwanth P</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-5">
-          <button 
-            onClick={() => setIsAuthModalOpen(true)}
-            className="text-xs text-slate-400 hover:text-slate-200 font-medium transition duration-200"
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => setIsAuthModalOpen(true)}
-            className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg shadow-md shadow-blue-600/10 hover:shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-          >
-            Get Started
-          </button>
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex flex-col text-right">
+            <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest leading-none">
+              Applications: 8
+            </span>
+            <span className="text-[8px] text-slate-650 font-mono uppercase tracking-widest mt-1">
+              — Unlimited Tier —
+            </span>
+          </div>
+
+          {/* Interactive Profile avatar dropdown */}
+          <div className="relative group">
+            <button 
+              className="h-8 w-8 rounded-full border border-slate-800 overflow-hidden shadow-md cursor-pointer hover:border-[#EAE5D8] transition active:scale-95 flex items-center justify-center bg-gradient-to-tr from-amber-600 to-indigo-850"
+              title="Yashwanth P Credentials"
+            >
+              <span className="text-[10px] font-bold text-amber-200">YP</span>
+            </button>
+            
+            <div className="absolute right-0 mt-2 w-48 bg-slate-950 border border-slate-900 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 z-50">
+              <div className="px-4 py-2.5 border-b border-slate-900">
+                <p className="text-xs font-bold text-slate-200 font-sans">Yashwanth P</p>
+                <p className="text-[9px] text-slate-500 font-mono mt-0.5">yashwanth.p@gmail.com</p>
+              </div>
+              <button 
+                onClick={() => setIsLoggedIn(false)}
+                className="w-full text-left px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition cursor-pointer font-sans"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
