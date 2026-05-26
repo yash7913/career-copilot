@@ -14,6 +14,41 @@ export default function SaaSWorkspacePage() {
   // Authentication states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
+  const [authProvider, setAuthProvider] = useState<"Google" | "LinkedIn" | null>(null);
+
+  // Simulated login/auth function
+  const startSimulatedAuth = (provider: "Google" | "LinkedIn") => {
+    setIsAuthenticating(true);
+    setAuthProvider(provider);
+    
+    const messages = [
+      "🔐 Establishing secure connection...",
+      provider === "Google" 
+        ? "📡 Connecting to Google secure identity provider..." 
+        : "📡 Connecting to LinkedIn secure identity provider...",
+      "⚡ Retrieving authenticated profile data...",
+      "📡 Syncing Yashwanth's profile...",
+      "✨ Initializing personalized workspace..."
+    ];
+
+    let currentStep = 0;
+    setAuthMessage(messages[0]);
+
+    const interval = setInterval(() => {
+      currentStep++;
+      if (currentStep < messages.length) {
+        setAuthMessage(messages[currentStep]);
+      } else {
+        clearInterval(interval);
+        setIsLoggedIn(true);
+        setIsAuthenticating(false);
+        setIsAuthModalOpen(false);
+        setAuthProvider(null);
+      }
+    }, 600); // 5 steps * 600ms = 3.0 seconds total
+  };
 
   // Job Auto-Extraction states
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -251,7 +286,7 @@ export default function SaaSWorkspacePage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500/25 selection:text-amber-250">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500/25 selection:text-amber-200">
         {/* Sticky Header Navbar */}
         <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/60 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -264,8 +299,8 @@ export default function SaaSWorkspacePage() {
                 Career Co-Pilot
               </h1>
               <span className="text-[10px] text-slate-700 font-mono">/</span>
-              <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase">
-                = V0.1 - BETA =
+              <span className="text-[8px] text-[#EAE5D8] font-mono tracking-widest uppercase font-semibold">
+                Landing Page
               </span>
             </div>
           </div>
@@ -275,10 +310,10 @@ export default function SaaSWorkspacePage() {
               = Powered by GPT-5.2 =
             </span>
             <button
-              onClick={() => setIsLoggedIn(true)}
+              onClick={() => setIsAuthModalOpen(true)}
               className="text-xs font-bold font-mono tracking-wide text-slate-200 border border-slate-800 hover:border-slate-600 hover:text-white px-5 py-2 rounded-full shadow-md bg-transparent transition active:scale-95 duration-200 cursor-pointer"
             >
-              Sign In
+              Sign up / Sign in
             </button>
           </div>
         </header>
@@ -308,19 +343,44 @@ export default function SaaSWorkspacePage() {
               </p>
             </div>
 
-            {/* Auth CTA pill button */}
-            <div className="flex flex-wrap items-center gap-6 mt-2">
+            {/* Auth CTA pill buttons */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-2">
               <button
-                onClick={() => setIsLoggedIn(true)}
-                className="px-8 py-4 bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 font-bold text-xs tracking-wider rounded-full shadow-xl shadow-white/5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-3 cursor-pointer"
+                onClick={() => startSimulatedAuth("Google")}
+                className="px-6 py-3.5 bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 font-bold text-xs tracking-wider rounded-full shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer shrink-0"
               >
-                Continue with Google
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.04c1.62 0 3.08.56 4.22 1.64l3.15-3.15C17.45 1.77 14.93 1 12 1 7.39 1 3.4 3.65 1.48 7.5l3.86 3C6.27 7.62 8.89 5.04 12 5.04z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M23.49 12.27c0-.82-.07-1.6-.21-2.27H12v4.51h6.46c-.28 1.48-1.11 2.73-2.37 3.58l3.69 2.87c2.16-1.99 3.71-4.92 3.71-8.69z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.34 14.5A7.16 7.16 0 0 1 5 12c0-.87.15-1.72.43-2.5L1.57 6.5C.57 8.5 0 10.5 0 12c0 1.5.57 3.5 1.57 5.5l3.77-3z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.69-2.87c-1.02.68-2.33 1.09-4.27 1.09-3.11 0-5.73-2.58-6.66-5.46l-3.86 3C3.4 20.35 7.39 23 12 23z"
+                  />
                 </svg>
+                Continue with Google
               </button>
 
-              <span className="text-[9px] text-slate-500 font-mono tracking-widest uppercase">
+              <button
+                onClick={() => startSimulatedAuth("LinkedIn")}
+                className="px-6 py-3.5 bg-slate-950 hover:bg-slate-900 text-[#EAE5D8] font-bold text-xs tracking-wider rounded-full border border-[#EAE5D8]/50 hover:border-[#EAE5D8] shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer shrink-0"
+              >
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                </svg>
+                Continue with LinkedIn
+              </button>
+
+              <span className="text-[9px] text-slate-500 font-mono tracking-widest uppercase sm:ml-2">
                 = 7-Day Session · No Card Required =
               </span>
             </div>
@@ -460,7 +520,7 @@ export default function SaaSWorkspacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-blue-500/30 selection:text-blue-200">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500/25 selection:text-amber-200">
       {/* Sticky Header Navbar Overhauled for Yashwanth P */}
       <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-900/80 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -476,6 +536,14 @@ export default function SaaSWorkspacePage() {
             <h1 className="text-xs font-bold tracking-widest text-[#EAE5D8] uppercase font-mono">
               Career Co-Pilot
             </h1>
+            <span className="text-[10px] text-slate-700 font-mono">/</span>
+            <span 
+              onClick={() => setIsLoggedIn(false)} 
+              className="text-[10px] text-slate-500 font-mono uppercase tracking-wider cursor-pointer hover:text-slate-355 transition"
+              title="Back to Landing Page"
+            >
+              Landing Page
+            </span>
             <span className="text-[10px] text-slate-700 font-mono">/</span>
             <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Workspace</span>
             <span className="text-[10px] text-slate-700 font-mono">/</span>
@@ -528,13 +596,15 @@ export default function SaaSWorkspacePage() {
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-[#EAE5D8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <h2 className="font-semibold text-sm text-slate-200 tracking-wide uppercase">Target Position</h2>
+                <h2 className="font-serif font-normal text-base text-[#EAE5D8] tracking-wide">
+                  Target <span className="italic">Position</span>
+                </h2>
               </div>
               {isExtracted && (
-                <span className="text-[9px] bg-blue-500/10 text-blue-400 font-mono border border-blue-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[9px] bg-[#EAE5D8]/10 text-[#EAE5D8] font-mono border border-[#EAE5D8]/20 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
                   {extractionWarning ? "✨ AI MAP" : "MANUAL"}
                 </span>
               )}
@@ -550,7 +620,7 @@ export default function SaaSWorkspacePage() {
                 </p>
                 <button
                   onClick={() => setIsDrawerOpen(true)}
-                  className="text-xs text-blue-400 hover:text-blue-300 font-semibold text-left mt-2 flex items-center gap-1 transition w-fit"
+                  className="text-xs text-[#EAE5D8] hover:text-[#F3EFE6] hover:underline font-semibold text-left mt-2 flex items-center gap-1 transition w-fit"
                 >
                   Change target →
                 </button>
@@ -570,7 +640,7 @@ export default function SaaSWorkspacePage() {
                           type="text"
                           value={extractedCompany}
                           onChange={(e) => setExtractedCompany(e.target.value)}
-                          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10"
                         />
                       </div>
                       <div className="flex flex-col gap-1">
@@ -579,7 +649,7 @@ export default function SaaSWorkspacePage() {
                           type="text"
                           value={extractedJobId}
                           onChange={(e) => setExtractedJobId(e.target.value)}
-                          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10"
                         />
                       </div>
                     </div>
@@ -590,7 +660,7 @@ export default function SaaSWorkspacePage() {
                         type="text"
                         value={extractedTitle}
                         onChange={(e) => setExtractedTitle(e.target.value)}
-                        className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-sans"
+                        className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10 font-sans"
                       />
                     </div>
 
@@ -600,7 +670,7 @@ export default function SaaSWorkspacePage() {
                         rows={5}
                         value={extractedJd}
                         onChange={(e) => setExtractedJd(e.target.value)}
-                        className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 resize-y font-sans leading-relaxed"
+                        className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10 resize-y font-sans leading-relaxed"
                       />
                     </div>
                   </div>
@@ -616,7 +686,7 @@ export default function SaaSWorkspacePage() {
                 </p>
                 <button
                   onClick={() => setIsDrawerOpen(true)}
-                  className="text-xs bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 font-bold border border-blue-500/20 px-4 py-2 rounded-lg transition active:scale-95 duration-200 cursor-pointer"
+                  className="text-xs bg-[#EAE5D8]/10 hover:bg-[#EAE5D8]/20 text-[#EAE5D8] font-bold border border-[#EAE5D8]/20 px-4 py-2 rounded-lg transition active:scale-95 duration-200 cursor-pointer"
                 >
                   ✨ Map a Role
                 </button>
@@ -628,13 +698,15 @@ export default function SaaSWorkspacePage() {
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl flex flex-col gap-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-[#EAE5D8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                 </svg>
-                <h2 className="font-semibold text-sm text-slate-200 tracking-wide uppercase">Portfolio Vault</h2>
+                <h2 className="font-serif font-normal text-base text-[#EAE5D8] tracking-wide">
+                  Portfolio <span className="italic">Vault</span>
+                </h2>
               </div>
               {uploadedFiles.length > 0 && (
-                <span className="text-[10px] bg-blue-500/10 text-blue-400 font-mono border border-blue-500/20 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] bg-[#EAE5D8]/10 text-[#EAE5D8] font-mono border border-[#EAE5D8]/20 px-2 py-0.5 rounded-full font-semibold">
                   {uploadedFiles.length} File(s)
                 </span>
               )}
@@ -648,7 +720,7 @@ export default function SaaSWorkspacePage() {
               className={`border border-dashed rounded-xl p-5 text-center cursor-pointer transition duration-300 flex flex-col items-center justify-center gap-2 group ${
                 isParsingPdf
                   ? "border-amber-500 bg-amber-500/5 animate-pulse"
-                  : "border-slate-800 hover:border-blue-500 hover:bg-slate-900/20"
+                  : "border-slate-800 hover:border-[#EAE5D8] hover:bg-[#EAE5D8]/5"
               }`}
             >
               <input
@@ -666,7 +738,7 @@ export default function SaaSWorkspacePage() {
                 </>
               ) : (
                 <>
-                  <svg className="w-6 h-6 text-slate-600 group-hover:text-blue-500 transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-6 h-6 text-slate-600 group-hover:text-[#EAE5D8] transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                   <span className="text-xs text-slate-300 font-semibold">Drop PDF Portfolio Files Here</span>
@@ -692,7 +764,7 @@ export default function SaaSWorkspacePage() {
                       className="flex items-center justify-between gap-3 bg-slate-950 border border-slate-900 p-2.5 rounded-xl transition hover:border-slate-800"
                     >
                       <div className="flex items-center gap-2 overflow-hidden flex-1">
-                        <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-4 h-4 text-[#EAE5D8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <span className="text-xs font-medium text-slate-300 truncate font-mono">
@@ -705,7 +777,7 @@ export default function SaaSWorkspacePage() {
                         <select
                           value={file.type}
                           onChange={(e) => updateFileType(file.id, e.target.value as any)}
-                          className="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500"
+                          className="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-[#EAE5D8]"
                         >
                           <option value="Resume">Resume</option>
                           <option value="Project Detail Sheet">Project Sheet</option>
@@ -737,7 +809,7 @@ export default function SaaSWorkspacePage() {
             className={`w-full py-4 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all duration-300 hover:scale-[1.01] uppercase ${
               isLoading
                 ? "bg-slate-800 text-slate-500 cursor-not-allowed shadow-none"
-                : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/10 hover:shadow-blue-500/25 active:scale-[0.99]"
+                : "bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 shadow-[#EAE5D8]/5 hover:shadow-[#EAE5D8]/10 active:scale-[0.99]"
             }`}
           >
             {isLoading ? (
@@ -765,20 +837,20 @@ export default function SaaSWorkspacePage() {
               <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-900">
                 <button
                   onClick={() => setActiveTab("resume")}
-                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition duration-200 ${
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition duration-200 ${
                     activeTab === "resume"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-500/10"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
+                      : "text-slate-400 hover:text-slate-250"
                   }`}
                 >
                   Tailored Resume Preview
                 </button>
                 <button
                   onClick={() => setActiveTab("cover-letter")}
-                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition duration-200 ${
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition duration-200 ${
                     activeTab === "cover-letter"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-500/10"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
+                      : "text-slate-400 hover:text-slate-250"
                   }`}
                 >
                   Cover Letter
@@ -837,11 +909,11 @@ export default function SaaSWorkspacePage() {
                     {/* Active streaming indicators */}
                     {isLoading && (
                       <span className="absolute top-4 right-4 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                       </span>
                     )}
-                    <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed selection:bg-blue-600/40">
+                    <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed selection:bg-amber-500/20">
                       {canvasText}
                     </pre>
                   </div>
@@ -849,7 +921,7 @@ export default function SaaSWorkspacePage() {
                   {/* Premium Download Kit Action Button (Triggers Authentication Modal) */}
                   <button
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs tracking-wider rounded-xl shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2 uppercase transition-all duration-200"
+                    className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 text-[#EAE5D8] font-bold text-xs tracking-wider rounded-xl border border-[#EAE5D8]/50 hover:border-[#EAE5D8] shadow-lg shadow-white/5 flex items-center justify-center gap-2 uppercase transition-all duration-200"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -892,12 +964,12 @@ export default function SaaSWorkspacePage() {
 
             {/* Modal Typography Header */}
             <div className="text-center flex flex-col gap-1.5">
-              <h3 className="text-xl font-bold text-slate-100 tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              <h3 className="text-xl font-bold text-slate-100 tracking-tight bg-gradient-to-r from-amber-200 to-[#EAE5D8] bg-clip-text text-transparent">
                 Create Your Command Center
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed px-4">
                 Unlock executive PDF downloads, advanced cover letters, and unlimited portfolio syncs. 
-                <span className="block mt-1 font-semibold text-emerald-400 text-[10px] tracking-wider uppercase">
+                <span className="block mt-1 font-semibold text-emerald-400 text-[10px] tracking-wider uppercase font-mono">
                   🎓 Free tier available for academic domains
                 </span>
               </p>
@@ -909,13 +981,10 @@ export default function SaaSWorkspacePage() {
             <div className="flex flex-col gap-3">
               {/* Google Auth */}
               <button
-                onClick={() => {
-                  alert("Redirecting to Google Secure Authentication...");
-                  setIsAuthModalOpen(false);
-                }}
-                className="w-full py-3 px-4 bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-200 text-xs font-bold tracking-wide flex items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.01]"
+                onClick={() => startSimulatedAuth("Google")}
+                className="w-full py-3 px-4 bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 rounded-xl text-xs font-bold tracking-wide flex items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.01]"
               >
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24">
+                <svg className="w-4.5 h-4.5 shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#EA4335"
                     d="M12 5.04c1.62 0 3.08.56 4.22 1.64l3.15-3.15C17.45 1.77 14.93 1 12 1 7.39 1 3.4 3.65 1.48 7.5l3.86 3C6.27 7.62 8.89 5.04 12 5.04z"
@@ -938,11 +1007,8 @@ export default function SaaSWorkspacePage() {
 
               {/* LinkedIn Auth */}
               <button
-                onClick={() => {
-                  alert("Redirecting to LinkedIn Secure Authentication...");
-                  setIsAuthModalOpen(false);
-                }}
-                className="w-full py-3 px-4 bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-200 text-xs font-bold tracking-wide flex items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.01]"
+                onClick={() => startSimulatedAuth("LinkedIn")}
+                className="w-full py-3 px-4 bg-slate-950 hover:bg-slate-900 text-[#EAE5D8] border border-[#EAE5D8]/55 hover:border-[#EAE5D8] rounded-xl text-xs font-bold tracking-wide flex items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.01]"
               >
                 <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
@@ -969,7 +1035,7 @@ export default function SaaSWorkspacePage() {
 
           {/* Sliding Panel Container */}
           <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-md bg-slate-950 border-l border-slate-800/80 shadow-2xl flex flex-col p-8 relative animate-slideLeft h-full">
+            <div className="w-screen max-w-2xl bg-slate-950 border-l border-slate-800/80 shadow-2xl flex flex-col p-8 relative animate-slideLeft h-full">
               
               {/* Close Button */}
               <button
@@ -987,8 +1053,8 @@ export default function SaaSWorkspacePage() {
                 {/* Header Typography */}
                 <div className="flex flex-col gap-2 border-b border-slate-800/60 pb-5">
                   <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Target Position Profile</span>
-                  <h3 className="text-xl font-extrabold text-slate-100 tracking-tight uppercase font-mono bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">
-                    Map the Role
+                  <h3 className="text-2xl font-normal text-slate-100 font-serif tracking-tight">
+                    Map the <span className="text-[#EAE5D8] italic">Role</span>
                   </h3>
                   <p className="text-xs text-slate-400 leading-relaxed font-sans mt-1">
                     Paste anything — messy job posts, LinkedIn dumps, careers-page text. We'll structure it.
@@ -1005,7 +1071,7 @@ export default function SaaSWorkspacePage() {
                       placeholder="https://careers.example.com/role"
                       value={jobUrl}
                       onChange={(e) => setJobUrl(e.target.value)}
-                      className="bg-slate-900/40 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all duration-200 font-mono"
+                      className="bg-slate-900/40 border border-slate-800 focus:border-[#EAE5D8] rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-1 focus:ring-[#EAE5D8]/10 transition-all duration-200 font-mono"
                     />
                   </div>
 
@@ -1017,7 +1083,7 @@ export default function SaaSWorkspacePage() {
                       rows={14}
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
-                      className="bg-slate-900/40 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all duration-200 font-sans resize-none leading-relaxed"
+                      className="bg-slate-900/40 border border-slate-800 focus:border-[#EAE5D8] rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:ring-1 focus:ring-[#EAE5D8]/10 transition-all duration-200 font-sans resize-none leading-relaxed"
                     />
                   </div>
                 </div>
@@ -1041,7 +1107,7 @@ export default function SaaSWorkspacePage() {
                   className={`w-full py-4 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all duration-300 uppercase cursor-pointer ${
                     isExtracting
                       ? "bg-slate-800 text-slate-500 cursor-not-allowed shadow-none"
-                      : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/10 hover:shadow-emerald-500/25 active:scale-[0.99]"
+                      : "bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 shadow-[#EAE5D8]/5 active:scale-[0.99]"
                   }`}
                 >
                   {isExtracting ? (
@@ -1056,6 +1122,39 @@ export default function SaaSWorkspacePage() {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Simulated OAuth Loader Overlay */}
+      {isAuthenticating && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-fadeIn">
+          <div className="flex flex-col items-center justify-center max-w-sm text-center gap-8 animate-scaleUp">
+            {/* Spinning orbital loader */}
+            <div className="relative h-20 w-20 flex items-center justify-center">
+              {/* Outer ring */}
+              <div className="absolute inset-0 rounded-full border-4 border-[#EAE5D8]/10 border-t-[#EAE5D8] animate-spin"></div>
+              {/* Inner pulsing logo circle */}
+              <div className="h-10 w-10 rounded-full bg-[#EAE5D8] flex items-center justify-center shadow-inner relative animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-slate-950"></span>
+              </div>
+            </div>
+
+            {/* Credential retrieval status message */}
+            <div className="flex flex-col gap-3 font-mono">
+              <span className="text-[10px] text-slate-500 tracking-widest uppercase">
+                = Identity Verification =
+              </span>
+              <p className="text-sm font-semibold text-slate-200 tracking-wide transition-all duration-300 min-h-[40px] flex items-center justify-center">
+                {authMessage}
+              </p>
+              <div className="flex items-center justify-center gap-1.5 mt-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                <span className="text-[9px] text-[#EAE5D8] tracking-widest uppercase font-semibold">
+                  Authenticating via {authProvider}...
+                </span>
               </div>
             </div>
           </div>
