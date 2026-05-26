@@ -12,6 +12,27 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!process.env.OPENAI_API_KEY) {
+      const missingKeyMarkdown = `# ⚠️ OpenAI API Key Missing
+
+To start tailoring your resumes and cover letters with state-of-the-art AI, please configure your OpenAI API Key:
+
+1. **Create a file** named \`.env.local\` in the root of your project directory (\`C:\\Users\\yasha\\Documents\\Career Copilot\`).
+2. **Add your OpenAI API key** to the file:
+   \`\`\`env
+   OPENAI_API_KEY=sk-proj-YOUR_ACTUAL_KEY
+   \`\`\`
+3. **Restart your Next.js development server** (stop the current server and run \`npm run dev\` in your terminal).
+
+*Once configured, Career Copilot will automatically optimize your resumes and compose cover letters in real-time!*`;
+
+      return new Response(missingKeyMarkdown, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
+    }
+
     const systemPrompt = `You are an expert executive resume writer, career strategist, and recruiter. Your objective is to help candidates land interviews by analyzing their background (which may consist of a consolidated portfolio including resumes, project detail sheets, and technical slides) and a target job description, then generating high-impact, professionally tailored materials in well-formatted, clean Markdown.`;
 
     const userPrompt =

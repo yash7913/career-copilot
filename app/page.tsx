@@ -18,6 +18,7 @@ export default function SaaSWorkspacePage() {
   const [jobInput, setJobInput] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [isExtracted, setIsExtracted] = useState(false);
+  const [extractionWarning, setExtractionWarning] = useState<string | null>(null);
   
   // Extracted Metadata fields (editable)
   const [extractedCompany, setExtractedCompany] = useState("");
@@ -141,6 +142,7 @@ export default function SaaSWorkspacePage() {
 
     setIsExtracting(true);
     setIsExtracted(false);
+    setExtractionWarning(null);
 
     try {
       const response = await fetch("/api/extract-job", {
@@ -150,7 +152,10 @@ export default function SaaSWorkspacePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to extract job details.");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.details || errorData.error || "Failed to extract job details."
+        );
       }
 
       const data = await response.json();
@@ -158,6 +163,10 @@ export default function SaaSWorkspacePage() {
       setExtractedTitle(data.jobTitle || "Unknown Position");
       setExtractedJobId(data.jobId || "N/A");
       setExtractedJd(data.cleanJobDescription || jobInput);
+      
+      if (data.warning) {
+        setExtractionWarning(data.warning);
+      }
       setIsExtracted(true);
     } catch (err: any) {
       console.error(err);
@@ -322,9 +331,20 @@ export default function SaaSWorkspacePage() {
             {isExtracted && (
               <div className="mt-2 border-t border-slate-800/80 pt-4 flex flex-col gap-4 animate-fadeIn">
                 <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  <span className="text-[10px] text-emerald-400 font-mono tracking-widest uppercase">Metadata Extracted</span>
+                  <span className={`h-2 w-2 rounded-full ${extractionWarning ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                  <span className={`text-[10px] font-mono tracking-widest uppercase ${extractionWarning ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {extractionWarning ? "Metadata Heuristics Active" : "Metadata Extracted"}
+                  </span>
                 </div>
+
+                {extractionWarning && (
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-[11px] text-amber-400 font-sans leading-relaxed flex flex-col gap-1.5">
+                    <span className="font-bold flex items-center gap-1">
+                      ⚠️ OpenAI API Key Missing / Fallback Active
+                    </span>
+                    <span>{extractionWarning}</span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
