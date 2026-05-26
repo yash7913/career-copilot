@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemPrompt = `You are an expert executive resume writer, career strategist, and recruiter. Your objective is to help candidates land interviews by analyzing their background alongside a target job description, then generating high-impact, professionally tailored materials in well-formatted, clean Markdown.`;
+    const systemPrompt = `You are an expert executive resume writer, career strategist, and recruiter. Your objective is to help candidates land interviews by analyzing their background (which may consist of a consolidated portfolio including resumes, project detail sheets, and technical slides) and a target job description, then generating high-impact, professionally tailored materials in well-formatted, clean Markdown.`;
 
     const userPrompt =
       mode === "cover-letter"
@@ -23,7 +23,7 @@ Job ID: ${jobId || "N/A"}
 Target Job Description:
 ${jobDescription}
 
-Candidate Profile / Experience:
+Candidate Consolidated Portfolio (Synthesize achievements and details from these documents):
 ${profile}
 
 ---
@@ -32,7 +32,7 @@ Requirements for the Cover Letter:
 2. Structure:
    - A professional salutation addressing the hiring team at ${company || "the target company"}.
    - Introduction: Mention the position applied for (Job ID: ${jobId || "N/A"}) and hook the reader with immediate value.
-   - Body Paragraphs: Focus on candidate accomplishments that directly match the core requirements of the job description. Emphasize how their experience will solve the company's pain points.
+   - Body Paragraphs: Draw parallels between candidate achievements across their portfolio and the core requirements of the job description. Emphasize how their experience will solve the company's pain points.
    - Closing: Reiterate enthusiasm, state a proactive call to action for an interview, and use a professional sign-off.
 3. Tone: Confident, persuasive, professional, and authentic.`
         : `Optimize and tailor the candidate's resume/profile to align with the target job description:
@@ -42,12 +42,12 @@ Job ID: ${jobId || "N/A"}
 Target Job Description:
 ${jobDescription}
 
-Candidate Profile / Existing Resume:
+Candidate Consolidated Portfolio (Synthesize achievements and details from these documents):
 ${profile}
 
 ---
 Requirements for the Tailored Resume:
-1. Restructure and rephrase the experience sections to maximize alignment with the job description keywords and core expectations.
+1. Restructure and rephrase the experience sections to maximize alignment with the job description keywords and core expectations, drawing from their entire portfolio.
 2. Optimize bullet points using high-impact action verbs (e.g., Spearheaded, Engineered, Accelerated, Designed) and quantify results (e.g., metrics, percentages, dollar figures) based on the candidate's profile.
 3. Naturally integrate essential keywords, skills, and methodologies from the job description.
 4. Format the output as a beautiful, modern Markdown resume with sections: Professional Summary, Core Competencies (keywords), Professional Experience, Projects (optional), and Education/Certifications.
