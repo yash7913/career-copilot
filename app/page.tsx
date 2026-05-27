@@ -240,6 +240,7 @@ export default function SaaSWorkspacePage() {
   const [extractedTitle, setExtractedTitle] = useState("");
   const [extractedJobId, setExtractedJobId] = useState("");
   const [extractedJd, setExtractedJd] = useState("");
+  const [directionMatrix, setDirectionMatrix] = useState("");
 
   // Multi-File Portfolio states
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -486,6 +487,7 @@ export default function SaaSWorkspacePage() {
           company: extractedCompany,
           jobId: extractedJobId,
           mode: activeTab,
+          directionMatrix: directionMatrix,
         },
       });
     } catch (err) {
@@ -523,34 +525,128 @@ export default function SaaSWorkspacePage() {
     document.body.removeChild(link);
   };
 
+  const handleExportPDF = () => {
+    if (!canvasText) {
+      alert("No content to export. Please generate your tailored resume or cover letter first.");
+      return;
+    }
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Please allow pop-ups to export as PDF.");
+      return;
+    }
+    
+    const title = activeTab === "resume" ? "Tailored Resume" : "Tailored Cover Letter";
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${title} - ${extractedCompany || "Career Copilot"}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter+Tight:wght@300..600&display=swap');
+            body {
+              background-color: #F4EFE6;
+              color: #0F1E2C;
+              font-family: 'Inter Tight', sans-serif;
+              padding: 40px;
+              line-height: 1.6;
+            }
+            .document {
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            h1 {
+              font-family: 'Fraunces', serif;
+              border-bottom: 2px solid #C9A961;
+              padding-bottom: 8px;
+              font-size: 28px;
+              text-align: center;
+              color: #0F1E2C;
+              margin-bottom: 20px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            h2 {
+              font-family: 'Fraunces', serif;
+              border-bottom: 1px solid rgba(201, 169, 97, 0.5);
+              padding-bottom: 4px;
+              font-size: 18px;
+              margin-top: 25px;
+              color: #0F1E2C;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            h3 {
+              font-family: 'Fraunces', serif;
+              font-size: 14px;
+              margin-top: 15px;
+              color: #0F1E2C;
+            }
+            pre {
+              white-space: pre-wrap;
+              font-family: 'Inter Tight', sans-serif;
+              font-size: 13px;
+              color: #2D3748;
+            }
+            ul {
+              margin-left: 20px;
+              padding-left: 0;
+            }
+            li {
+              font-size: 13px;
+              margin-bottom: 4px;
+            }
+            p {
+              font-size: 13px;
+              margin-bottom: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="document">
+            <h1>${title}</h1>
+            <pre>${canvasText}</pre>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500/25 selection:text-amber-200">
+      <div className="min-h-screen bg-[#0F1E2C] text-[#F4EFE6] flex flex-col font-sans antialiased selection:bg-[#C9A961]/25 selection:text-[#F4EFE6] relative overflow-hidden bg-[radial-gradient(circle_at_20%_20%,rgba(201,169,97,0.06),transparent_40%),radial-gradient(circle_at_80%_60%,rgba(16,185,129,0.04),transparent_50%)]">
         {/* Sticky Header Navbar */}
-        <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/60 px-6 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-[#0F1E2C]/85 backdrop-blur-md border-b border-[#233B57] px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Logo circle matching the screenshot */}
-            <div className="h-7 w-7 rounded-full bg-[#EAE5D8] flex items-center justify-center shadow-inner relative">
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-950"></span>
+            {/* Elegant Ivory Logo Square + Gold Dot */}
+            <div className="h-8 w-8 bg-[#F4EFE6] rounded-lg flex items-center justify-center border border-[#C9A961]/20 shadow-sm shrink-0">
+              <span className="h-2 w-2 rounded-full bg-[#C9A961] animate-pulse"></span>
             </div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xs font-bold tracking-widest text-[#EAE5D8] uppercase font-mono">
+              <h1 className="text-sm font-semibold font-serif tracking-normal text-[#F4EFE6]">
                 Career Co-Pilot
               </h1>
-              <span className="text-[10px] text-slate-700 font-mono">/</span>
-              <span className="text-[8px] text-[#EAE5D8] font-mono tracking-widest uppercase font-semibold">
-                Landing Page
+              <span className="text-[10px] text-slate-500 font-mono">/</span>
+              <span className="text-[9px] text-slate-400 font-mono tracking-widest uppercase">
+                WORKSPACE
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-6">
-            <span className="hidden md:inline text-[9px] text-slate-500 font-mono uppercase tracking-widest">
-              = Powered by GPT-5.2 =
+            <span className="hidden md:inline text-[9px] text-[#C9A961]/80 font-mono uppercase tracking-widest">
+              = Atelier Premium Tier =
             </span>
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="text-xs font-bold font-mono tracking-wide text-slate-200 border border-slate-800 hover:border-slate-600 hover:text-white px-5 py-2 rounded-full shadow-md bg-transparent transition active:scale-95 duration-200 cursor-pointer"
+              className="text-xs font-bold font-mono tracking-wide text-[#F4EFE6] border border-[#233B57] hover:border-[#C9A961]/50 hover:text-white px-5 py-2 rounded-full shadow-md bg-transparent transition active:scale-95 duration-200 cursor-pointer"
             >
               Sign up / Sign in
             </button>
@@ -558,35 +654,36 @@ export default function SaaSWorkspacePage() {
         </header>
 
         {/* Hero Section Split Layout */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center z-10">
           {/* Left Hero Box (7 columns) */}
           <div className="lg:col-span-7 flex flex-col gap-8">
             <div className="flex flex-col gap-6">
               {/* Top Tag */}
               <div className="w-fit">
-                <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
+                <span className="text-[10px] text-[#C9A961]/80 font-mono tracking-widest uppercase">
                   = ◆ Career, Refined =
                 </span>
               </div>
 
-              {/* Serif Title Headline with warm italics */}
-              <h2 className="text-5xl md:text-6.5xl font-normal text-slate-100 font-serif leading-[1.08] tracking-tight max-w-xl">
+              {/* Serif Title Headline with warm gold-gradient italics */}
+              <h2 className="text-5xl md:text-6.5xl font-normal text-[#F4EFE6] font-serif leading-[1.08] tracking-tight max-w-xl">
                 Your career, <br />
-                <span className="text-[#EAE5D8] italic font-serif pr-2">re-engineered</span> <br />
+                <span className="bg-gradient-to-r from-[#C9A961] via-[#E2C784] to-[#C9A961] bg-clip-text text-transparent italic font-serif pr-2">re-engineered</span> <br />
                 per application.
               </h2>
 
               {/* Subheadline Copy */}
-              <p className="text-sm md:text-base text-slate-400 leading-relaxed font-sans max-w-lg mt-2">
+              <p className="text-sm md:text-base text-slate-350 leading-relaxed font-sans max-w-lg mt-2">
                 Drop your portfolio. Paste a job. Watch a tailored résumé and cover letter assemble in seconds — with an honest read on where you fit and what's missing.
               </p>
             </div>
 
             {/* Auth CTA pill buttons */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-2">
+              {/* Ivory Inverted Google CTA */}
               <button
                 onClick={() => startSimulatedAuth("Google")}
-                className="px-6 py-3.5 bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 font-bold text-xs tracking-wider rounded-full shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer shrink-0"
+                className="px-6 py-3.5 bg-[#F4EFE6] hover:bg-[#F4EFE6]/90 text-[#0F1E2C] font-bold text-xs tracking-wider rounded-full shadow-lg border border-[#C9A961]/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer shrink-0"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -611,7 +708,7 @@ export default function SaaSWorkspacePage() {
 
               <button
                 onClick={() => startSimulatedAuth("LinkedIn")}
-                className="px-6 py-3.5 bg-slate-950 hover:bg-slate-900 text-[#EAE5D8] font-bold text-xs tracking-wider rounded-full border border-[#EAE5D8]/50 hover:border-[#EAE5D8] shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer shrink-0"
+                className="px-6 py-3.5 bg-[#0F1E2C] hover:bg-slate-900/60 text-[#F4EFE6] font-bold text-xs tracking-wider rounded-full border border-[#C9A961]/40 hover:border-[#C9A961] shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer shrink-0"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
@@ -625,22 +722,22 @@ export default function SaaSWorkspacePage() {
             </div>
 
             {/* Bottom Statistics Row */}
-            <div className="bg-slate-900/30 border border-slate-900 rounded-2xl p-6 md:p-8 mt-6 max-w-xl shadow-lg">
-              <div className="grid grid-cols-3 gap-6 text-center divide-x divide-slate-900">
+            <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-2xl p-6 md:p-8 mt-6 max-w-xl shadow-lg">
+              <div className="grid grid-cols-3 gap-6 text-center divide-x divide-[#233B57]">
                 <div className="flex flex-col gap-2.5">
-                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#EAE5D8]">≤ 38s</span>
+                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#C9A961]">≤ 38s</span>
                   <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase font-semibold">
                     = From Upload to Draft =
                   </span>
                 </div>
                 <div className="flex flex-col gap-2.5 pl-4">
-                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#EAE5D8]">100%</span>
+                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#C9A961]">100%</span>
                   <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase font-semibold">
                     = ATS-Aligned Formatting =
                   </span>
                 </div>
                 <div className="flex flex-col gap-2.5 pl-4">
-                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#EAE5D8]">GPT-5.2</span>
+                  <span className="text-2xl md:text-3xl font-bold font-mono text-[#C9A961]">GPT-5.2</span>
                   <span className="text-[8px] text-slate-500 font-mono tracking-widest uppercase font-semibold">
                     = Latest OpenAI Reasoning =
                   </span>
@@ -652,106 +749,108 @@ export default function SaaSWorkspacePage() {
           {/* Right Hero Image / Vector geometric canvas (5 columns) */}
           <div className="lg:col-span-5 relative w-full flex items-center justify-center min-h-[400px]">
             {/* SVG Geometric Node Network */}
-            <div className="w-full h-full opacity-60 hover:opacity-85 transition-opacity duration-500 relative">
+            <div className="w-full h-full opacity-50 hover:opacity-75 transition-opacity duration-500 relative">
               <svg className="w-full h-full max-h-[500px]" viewBox="0 0 500 500" fill="none">
                 <defs>
                   <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.1" />
-                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#C9A961" stopOpacity="0.08" />
+                    <stop offset="100%" stopColor="#C9A961" stopOpacity="0" />
                   </radialGradient>
                 </defs>
                 <circle cx="250" cy="250" r="220" fill="url(#glow)" className="animate-pulse" />
                 <g className="origin-center animate-[spin_85s_linear_infinite]">
-                  {/* Nodes wireframe lines */}
-                  <polygon points="250,80 120,200 380,200" stroke="#334155" strokeWidth="1" strokeDasharray="3,3" />
-                  <polygon points="120,200 180,380 320,380" stroke="#334155" strokeWidth="1" />
-                  <polygon points="380,200 320,380 250,80" stroke="#475569" strokeWidth="1" />
+                  <polygon points="250,80 120,200 380,200" stroke="#233B57" strokeWidth="1" strokeDasharray="3,3" />
+                  <polygon points="120,200 180,380 320,380" stroke="#233B57" strokeWidth="1" />
+                  <polygon points="380,200 320,380 250,80" stroke="#233B57" strokeWidth="1" />
                   <line x1="250" y1="80" x2="180" y2="380" stroke="#1e293b" strokeWidth="1.5" />
                   <line x1="120" y1="200" x2="320" y2="380" stroke="#1e293b" strokeWidth="1.5" />
-                  <line x1="380" y1="200" x2="180" y2="380" stroke="#334155" strokeWidth="1.2" />
+                  <line x1="380" y1="200" x2="180" y2="380" stroke="#233B57" strokeWidth="1.2" />
 
                   {/* Inner polygons */}
-                  <polygon points="250,150 180,250 320,250" stroke="#334155" strokeWidth="0.8" strokeDasharray="4,4" />
+                  <polygon points="250,150 180,250 320,250" stroke="#233B57" strokeWidth="0.8" strokeDasharray="4,4" />
                   <polygon points="180,250 210,320 290,320" stroke="#1e293b" strokeWidth="0.8" />
-                  <polygon points="320,250 290,320 250,150" stroke="#334155" strokeWidth="0.8" />
+                  <polygon points="320,250 290,320 250,150" stroke="#233B57" strokeWidth="0.8" />
 
                   {/* Spheres glowing nodes */}
-                  <circle cx="250" cy="80" r="14" fill="#991b1b" className="animate-pulse" />
-                  <circle cx="250" cy="80" r="6" fill="#ef4444" />
-                  <circle cx="120" cy="200" r="16" fill="#991b1b" />
-                  <circle cx="120" cy="200" r="7" fill="#dc2626" />
-                  <circle cx="380" cy="200" r="18" fill="#991b1b" className="animate-pulse" />
-                  <circle cx="380" cy="200" r="8" fill="#f87171" />
-                  <circle cx="180" cy="380" r="17" fill="#991b1b" />
-                  <circle cx="180" cy="380" r="7.5" fill="#dc2626" />
-                  <circle cx="320" cy="380" r="15" fill="#991b1b" className="animate-pulse" />
-                  <circle cx="320" cy="380" r="6" fill="#ef4444" />
+                  <circle cx="250" cy="80" r="14" fill="#0F1E2C" stroke="#C9A961" strokeWidth="1" className="animate-pulse" />
+                  <circle cx="250" cy="80" r="4" fill="#C9A961" />
+                  <circle cx="120" cy="200" r="16" fill="#0F1E2C" stroke="#233B57" strokeWidth="1" />
+                  <circle cx="120" cy="200" r="5" fill="#233B57" />
+                  <circle cx="380" cy="200" r="18" fill="#0F1E2C" stroke="#C9A961" strokeWidth="1" className="animate-pulse" />
+                  <circle cx="380" cy="200" r="5" fill="#C9A961" />
+                  <circle cx="180" cy="380" r="17" fill="#0F1E2C" stroke="#233B57" strokeWidth="1" />
+                  <circle cx="180" cy="380" r="5" fill="#233B57" />
+                  <circle cx="320" cy="380" r="15" fill="#0F1E2C" stroke="#C9A961" strokeWidth="1" className="animate-pulse" />
+                  <circle cx="320" cy="380" r="4" fill="#C9A961" />
                 </g>
               </svg>
             </div>
 
-            {/* Floating Glassmorphism Generation Card */}
-            <div className="absolute top-1/3 left-6 md:-left-12 bg-slate-950/75 backdrop-blur-md border border-slate-900 rounded-xl p-5 shadow-2xl w-[310px] animate-[bounce_4.5s_ease-in-out_infinite] z-10 flex flex-col gap-4 font-mono select-none">
-              <div className="flex items-center justify-between border-b border-slate-900 pb-2.5">
-                <span className="text-[10px] text-slate-500 font-semibold tracking-wider">◆ LIVE GENERATION</span>
-                <span className="flex items-center gap-1.5 text-[9px] text-[#EAE5D8] font-semibold uppercase font-mono">
+            {/* Floating Glass-Panel Live-Generation Telemetry */}
+            <div className="absolute top-1/3 left-6 md:-left-12 bg-[#0F1E2C]/80 backdrop-blur-md border border-[#233B57] rounded-xl p-5 shadow-2xl w-[310px] animate-[bounce_4.5s_ease-in-out_infinite] z-10 flex flex-col gap-4 font-mono select-none">
+              <div className="flex items-center justify-between border-b border-[#233B57] pb-2.5">
+                <span className="text-[9px] text-[#C9A961] font-bold tracking-wider">◆ TELEMETRY STREAM</span>
+                <span className="flex items-center gap-1.5 text-[9px] text-[#F4EFE6] font-semibold uppercase">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  streaming
+                  live
                 </span>
               </div>
 
-              <div className="flex flex-col gap-2 text-xs text-slate-300">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600 font-mono">match</span>
-                  <span className="text-emerald-400 font-bold font-mono">93%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-650 font-mono">writing experience</span>
-                  <span className="flex items-center gap-0.5">
-                    <span className="h-3 w-1.5 bg-[#EAE5D8] animate-[pulse_0.8s_infinite]"></span>
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-650 font-mono">gaps</span>
-                  <span className="text-amber-200/90 font-semibold text-right">kubernetes, terraform</span>
-                </div>
+              {/* Progress gauge with gradient stroke */}
+              <div className="flex items-center justify-center py-2">
+                <svg className="w-20 h-20 shrink-0" viewBox="0 0 36 36">
+                  <defs>
+                    <linearGradient id="goldTelemetry" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#C9A961" />
+                      <stop offset="50%" stopColor="#E2C784" />
+                      <stop offset="100%" stopColor="#C9A961" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#233B57" strokeWidth="2.5" />
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="url(#goldTelemetry)" strokeWidth="2.5" strokeDasharray="93 100" strokeDashoffset="0" strokeLinecap="round" className="origin-center -rotate-90" />
+                  <text x="18" y="20.8" className="fill-[#F4EFE6] font-mono text-[8px] font-bold text-center" textAnchor="middle">93%</text>
+                </svg>
               </div>
 
-              {/* Triple slider metrics */}
-              <div className="flex gap-1.5 mt-1">
-                <div className="h-1 flex-1 bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-400/80 w-[40%] rounded-full"></div>
+              <div className="flex flex-col gap-1.5 text-[10px] text-slate-350">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Vector Fit</span>
+                  <span className="text-emerald-400 font-bold font-mono">⭐ 93% MATCH</span>
                 </div>
-                <div className="h-1 flex-1 bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-400/80 w-[65%] rounded-full"></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Processing Stage</span>
+                  <span className="text-[#C9A961] font-semibold">Semantic Structuring</span>
                 </div>
-                <div className="h-full bg-[#EAE5D8] w-[90%] rounded-full"></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Target Selector</span>
+                  <span className="text-[#F4EFE6] font-semibold truncate max-w-[130px]">Google Enterprise</span>
+                </div>
               </div>
             </div>
           </div>
         </main>
 
         {/* Bottom Steps Grid (4 Columns) */}
-        <section className="w-full max-w-7xl mx-auto px-6 md:px-8 border-t border-slate-900/60 pt-10 pb-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+        <section className="w-full max-w-7xl mx-auto px-6 md:px-8 border-t border-[#233B57] pt-10 pb-12 grid grid-cols-1 md:grid-cols-4 gap-8 z-10">
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-amber-200/80 font-mono">01</span>
-            <h4 className="text-md font-bold font-serif text-slate-200">Upload</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">Drop your résumé, projects, and decks.</p>
+            <span className="text-xs text-[#C9A961] font-mono font-bold">01</span>
+            <h4 className="text-md font-bold font-serif text-[#F4EFE6]">Upload</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">Drop your résumé, projects, and decks.</p>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-amber-200/80 font-mono">02</span>
-            <h4 className="text-md font-bold font-serif text-slate-200">Target</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">Paste a JD or import from Greenhouse & Lever.</p>
+            <span className="text-xs text-[#C9A961] font-mono font-bold">02</span>
+            <h4 className="text-md font-bold font-serif text-[#F4EFE6]">Target</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">Paste a JD or import from Greenhouse & Lever.</p>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-amber-200/80 font-mono">03</span>
-            <h4 className="text-md font-bold font-serif text-slate-200">Tailor</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">Watch GPT-5.2 craft your custom kit.</p>
+            <span className="text-xs text-[#C9A961] font-mono font-bold">03</span>
+            <h4 className="text-md font-bold font-serif text-[#F4EFE6]">Tailor</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">Watch GPT-5.2 craft your custom kit.</p>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-amber-200/80 font-mono">04</span>
-            <h4 className="text-md font-bold font-serif text-slate-200">Export</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">Download a polished PDF — apply, repeat.</p>
+            <span className="text-xs text-[#C9A961] font-mono font-bold">04</span>
+            <h4 className="text-md font-bold font-serif text-[#F4EFE6]">Export</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">Download a polished PDF — apply, repeat.</p>
           </div>
         </section>
       </div>
@@ -759,39 +858,35 @@ export default function SaaSWorkspacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500/25 selection:text-amber-200">
-      {/* Sticky Header Navbar Overhauled for Yashwanth P */}
-      <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-900/80 px-6 py-3 flex items-center justify-between gap-4 flex-wrap md:flex-nowrap">
+    <div className="min-h-screen bg-[#0F1E2C] text-[#F4EFE6] flex flex-col font-sans antialiased selection:bg-[#C9A961]/25 selection:text-[#F4EFE6] relative overflow-hidden bg-[radial-gradient(circle_at_20%_20%,rgba(201,169,97,0.06),transparent_40%),radial-gradient(circle_at_80%_60%,rgba(16,185,129,0.04),transparent_50%)]">
+      {/* Sticky Header Navbar Overhauled */}
+      <header className="sticky top-0 z-40 bg-[#0F1E2C]/85 backdrop-blur-md border-b border-[#233B57] px-6 py-3 flex items-center justify-between gap-4 flex-wrap md:flex-nowrap">
         <div className="flex items-center gap-3 shrink-0">
-          {/* Circular beige logo matching screenshot */}
+          {/* Elegant Ivory Logo Square + Gold Dot */}
           <div 
             onClick={() => setIsLoggedIn(false)}
-            className="h-7 w-7 rounded-full bg-[#EAE5D8] flex items-center justify-center shadow-inner relative group cursor-pointer"
+            className="h-8 w-8 bg-[#F4EFE6] rounded-lg flex items-center justify-center border border-[#C9A961]/20 shadow-sm shrink-0 cursor-pointer hover:opacity-90 transition"
             title="Return to Landing Page"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-slate-950 group-hover:scale-125 transition"></span>
+            <span className="h-2 w-2 rounded-full bg-[#C9A961] animate-pulse"></span>
           </div>
           <div className="flex items-center gap-1.5 font-mono">
-            <h1 className="text-xs font-bold tracking-widest text-[#EAE5D8] uppercase">
+            <h1 className="text-sm font-semibold font-serif tracking-normal text-[#F4EFE6]">
               Career Co-Pilot
             </h1>
-            <span className="text-[10px] text-slate-700">/</span>
+            <span className="text-[10px] text-slate-500 font-mono">/</span>
             <span 
               onClick={() => setIsLoggedIn(false)} 
-              className="text-[10px] text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-300 transition"
+              className="text-[9px] text-slate-400 font-mono tracking-widest uppercase cursor-pointer hover:text-slate-200 transition"
               title="Back to Landing Page"
             >
-              Landing Page
+              WORKSPACE
             </span>
-            <span className="text-[10px] text-slate-700">/</span>
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider">Workspace</span>
-            <span className="text-[10px] text-slate-700">/</span>
-            <span className="text-[10px] text-slate-350 uppercase tracking-wider font-semibold">Yashwanth P</span>
           </div>
         </div>
 
         {/* Unified Command Center Primary Navigation Switcher */}
-        <div className="flex items-center gap-1.5 bg-slate-950 p-1 border border-slate-900 rounded-xl max-w-full overflow-x-auto shrink-0 scrollbar-none">
+        <div className="flex items-center gap-1.5 bg-[#0F1E2C] p-1 border border-[#233B57] rounded-xl max-w-full overflow-x-auto shrink-0 scrollbar-none">
           <button
             onClick={() => {
               setActiveView("discover");
@@ -799,8 +894,8 @@ export default function SaaSWorkspacePage() {
             }}
             className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
               activeView === "discover"
-                ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
-                : "text-slate-450 hover:text-slate-200"
+                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
             Discover Jobs
@@ -812,8 +907,8 @@ export default function SaaSWorkspacePage() {
             }}
             className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
               activeView === "workspace"
-                ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
-                : "text-slate-450 hover:text-slate-200"
+                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
             Workspace Hub
@@ -825,8 +920,8 @@ export default function SaaSWorkspacePage() {
             }}
             className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
               activeView === "tracker"
-                ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
-                : "text-slate-450 hover:text-slate-200"
+                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
             My Applications Tracker
@@ -838,25 +933,27 @@ export default function SaaSWorkspacePage() {
             }}
             className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
               activeView === "crawler"
-                ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
-                : "text-slate-450 hover:text-slate-200"
+                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
             Crawler Portal
           </button>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="hidden md:flex flex-col text-right font-mono">
-            <span className="text-[9px] text-slate-400 uppercase tracking-widest leading-none">
-              Applications: {trackerCards.length}
-            </span>
-            <span className="text-[8px] text-slate-650 uppercase tracking-widest mt-1">
-              — Unlimited Tier —
-            </span>
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Applications Badge */}
+          <div className="border border-[#233B57] bg-[#0F1E2C] px-3 py-1.5 rounded-lg text-[9px] font-mono tracking-widest text-[#F4EFE6] uppercase">
+            APPLICATIONS - <span className="text-[#C9A961] font-bold">{trackerCards.length}</span>
           </div>
 
-          {/* Interactive Profile avatar dropdown */}
+          {/* Atelier Tier Badge */}
+          <div className="border border-[#C9A961]/50 bg-[#C9A961]/10 px-3 py-1.5 rounded-lg text-[9px] font-mono tracking-widest text-[#C9A961] uppercase flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C9A961] animate-ping"></span>
+            ATELIER
+          </div>
+
+          {/* Interactive Profile avatar */}
           <div className="relative group">
             <button 
               className="h-8 w-8 rounded-full border border-slate-800 overflow-hidden shadow-md cursor-pointer hover:border-[#EAE5D8] transition active:scale-95 flex items-center justify-center bg-gradient-to-tr from-amber-600 to-indigo-850"
@@ -1030,141 +1127,31 @@ export default function SaaSWorkspacePage() {
           </div>
         )}
 
-        {/* 2. Workspace Hub View (Polish Document Generator Canvas) */}
         {activeView === "workspace" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn">
-            {/* Left Control Panel (5 Columns) */}
-            <section className="lg:col-span-5 flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn items-start">
+            {/* Left Control Panel (3 Columns) */}
+            <section className="lg:col-span-3 flex flex-col gap-6">
               
-              {/* Target Position Summary Card */}
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl flex flex-col gap-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-[#EAE5D8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <h2 className="font-serif font-normal text-base text-[#EAE5D8] tracking-wide">
-                      Target <span className="italic">Position</span>
-                    </h2>
-                  </div>
-                  {isExtracted && (
-                    <span className="text-[9px] bg-[#EAE5D8]/10 text-[#EAE5D8] font-mono border border-[#EAE5D8]/20 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
-                      {extractionWarning ? "✨ AI MAP" : "MANUAL"}
-                    </span>
-                  )}
+              {/* Portfolio Vault Card */}
+              <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-[#233B57] pb-3">
+                  <h2 className="font-mono text-xs font-bold tracking-widest text-[#F4EFE6] uppercase">
+                    PORTFOLIO VAULT
+                  </h2>
+                  <svg className="w-4 h-4 text-[#C9A961]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
                 </div>
 
-                {isExtracted ? (
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-sm font-bold text-slate-100 leading-snug">
-                      {extractedTitle}
-                    </h3>
-                    <p className="text-xs text-slate-400 font-medium font-sans">
-                      {extractedCompany} {extractedJobId && extractedJobId !== "N/A" && `· ID: ${extractedJobId}`}
-                    </p>
-                    <button
-                      onClick={() => setIsDrawerOpen(true)}
-                      className="text-xs text-[#EAE5D8] hover:text-[#F3EFE6] hover:underline font-semibold text-left mt-2 flex items-center gap-1 transition w-fit"
-                    >
-                      Change target →
-                    </button>
-
-                    {/* Collapsible Metadata Editor */}
-                    <details className="group mt-2 border-t border-slate-850 pt-3">
-                      <summary className="text-[10px] text-slate-500 hover:text-slate-300 font-mono tracking-widest uppercase cursor-pointer list-none flex items-center justify-between transition">
-                        <span>⚙️ Review / Edit Metadata</span>
-                        <span className="group-open:rotate-180 transition-transform duration-200 text-[8px]">▼</span>
-                      </summary>
-
-                      <div className="flex flex-col gap-4 mt-4 animate-fadeIn">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] text-slate-500 font-mono">Company</span>
-                            <input
-                              type="text"
-                              value={extractedCompany}
-                              onChange={(e) => setExtractedCompany(e.target.value)}
-                              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10"
-                            />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] text-slate-500 font-mono">Job ID</span>
-                            <input
-                              type="text"
-                              value={extractedJobId}
-                              onChange={(e) => setExtractedJobId(e.target.value)}
-                              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-500 font-mono">Job Title</span>
-                          <input
-                            type="text"
-                            value={extractedTitle}
-                            onChange={(e) => setExtractedTitle(e.target.value)}
-                            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10 font-sans"
-                          />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-500 font-mono">Clean JD Body</span>
-                          <textarea
-                            rows={5}
-                            value={extractedJd}
-                            onChange={(e) => setExtractedJd(e.target.value)}
-                            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#EAE5D8] focus:ring-1 focus:ring-[#EAE5D8]/10 resize-y font-sans leading-relaxed"
-                          />
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3 py-2 text-center items-center">
-                    <svg className="w-8 h-8 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="text-xs text-slate-500 max-w-xs leading-relaxed font-sans">
-                      No role targeted yet. Connect a job link or copy-paste the description.
-                    </p>
-                    <button
-                      onClick={() => setIsDrawerOpen(true)}
-                      className="text-xs bg-[#EAE5D8]/10 hover:bg-[#EAE5D8]/20 text-[#EAE5D8] font-bold border border-[#EAE5D8]/20 px-4 py-2 rounded-lg transition active:scale-95 duration-200 cursor-pointer"
-                    >
-                      ✨ Map a Role
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Multi-Document Portfolio Vault Card */}
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl flex flex-col gap-5">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-[#EAE5D8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                    </svg>
-                    <h2 className="font-serif font-normal text-base text-[#EAE5D8] tracking-wide">
-                      Portfolio <span className="italic">Vault</span>
-                    </h2>
-                  </div>
-                  {uploadedFiles.length > 0 && (
-                    <span className="text-[10px] bg-[#EAE5D8]/10 text-[#EAE5D8] font-mono border border-[#EAE5D8]/20 px-2 py-0.5 rounded-full font-semibold">
-                      {uploadedFiles.length} File(s)
-                    </span>
-                  )}
-                </div>
-
-                {/* Drag & Drop PDF Multi-Uploader */}
+                {/* Drag & Drop PDF Multi-Uploader (gold-on-soft dropzone) */}
                 <div
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
                   className={`border border-dashed rounded-xl p-5 text-center cursor-pointer transition duration-300 flex flex-col items-center justify-center gap-2 group ${
                     isParsingPdf
-                      ? "border-amber-500 bg-amber-500/5 animate-pulse"
-                      : "border-slate-800 hover:border-[#EAE5D8] hover:bg-[#EAE5D8]/5"
+                      ? "border-[#C9A961] bg-[#C9A961]/5 animate-pulse"
+                      : "border-[#233B57] hover:border-[#C9A961] hover:bg-[#C9A961]/5"
                   }`}
                 >
                   <input
@@ -1177,211 +1164,360 @@ export default function SaaSWorkspacePage() {
                   />
                   {isParsingPdf ? (
                     <>
-                      <div className="h-6 w-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-xs text-amber-400 font-semibold font-mono">Parsing PDF files...</span>
+                      <div className="h-6 w-6 border-2 border-[#C9A961] border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs text-[#C9A961] font-semibold font-mono">Parsing PDF files...</span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-6 h-6 text-slate-600 group-hover:text-[#EAE5D8] transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <svg className="w-6 h-6 text-[#C9A961] group-hover:scale-115 transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      <span className="text-xs text-slate-300 font-semibold">Drop PDF Portfolio Files Here</span>
-                      <span className="text-[10px] text-slate-500">Supports concurrent multi-file uploading</span>
+                      <span className="text-xs text-[#F4EFE6] font-semibold">Drop files or click to browse</span>
+                      <span className="text-[9px] text-slate-500 font-mono uppercase">PDF • DOCX • TXT • MD • ≤8MB</span>
                     </>
                   )}
                 </div>
 
                 {pdfSuccessMessage && (
-                  <span className="text-[10px] text-emerald-400 font-semibold text-center border border-emerald-500/10 bg-emerald-500/5 py-1.5 rounded-lg font-mono">
+                  <span className="text-[9px] text-emerald-400 font-semibold text-center border border-emerald-500/10 bg-emerald-500/5 py-1 rounded-lg font-mono">
                     {pdfSuccessMessage}
                   </span>
                 )}
 
                 {/* File Vault Inventory */}
                 {uploadedFiles.length > 0 && (
-                  <div className="flex flex-col gap-3 mt-1">
-                    <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">Active Vault Inventory</span>
-                    <div className="flex flex-col gap-2.5 max-h-[220px] overflow-auto pr-1">
-                      {uploadedFiles.map((file) => (
-                        <div
-                          key={file.id}
-                          className="flex items-center justify-between gap-3 bg-slate-950 border border-slate-900 p-2.5 rounded-xl transition hover:border-slate-800"
-                        >
-                          <div className="flex items-center gap-2 overflow-hidden flex-1">
-                            <svg className="w-4 h-4 text-[#EAE5D8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span className="text-xs font-medium text-slate-300 truncate font-mono">
-                              {file.name}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            {/* Drop-down Tag Selector */}
-                            <select
-                              value={file.type}
-                              onChange={(e) => updateFileType(file.id, e.target.value as any)}
-                              className="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-[#EAE5D8]"
-                            >
-                              <option value="Resume">Resume</option>
-                              <option value="Project Detail Sheet">Project Sheet</option>
-                              <option value="Technical Slides">Slides</option>
-                            </select>
-
-                            {/* Delete Row button */}
-                            <button
-                              onClick={() => deleteUploadedFile(file.id)}
-                              className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"
-                              title="Delete file"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
+                  <div className="flex flex-col gap-2 max-h-[180px] overflow-auto pr-1">
+                    {uploadedFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between gap-3 bg-[#0F1E2C]/80 border border-[#233B57] p-2.5 rounded-xl transition hover:border-[#C9A961]/35 shadow-sm"
+                      >
+                        <div className="flex flex-col overflow-hidden flex-1 gap-0.5">
+                          <span className="text-[11px] font-semibold text-[#F4EFE6] truncate font-mono">
+                            {file.name}
+                          </span>
+                          <span className="text-[8px] text-slate-500 font-mono tracking-wider uppercase">
+                            {file.type.replace(/Sheet|Technical|Detail/g, "")} • {Math.round(file.text.length / 1024)}KB
+                          </span>
                         </div>
-                      ))}
-                    </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteUploadedFile(file.id);
+                          }}
+                          className="p-1 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                          title="Delete file"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* Action Trigger Button */}
-              <button
-                onClick={handleTailorMaterials}
-                disabled={isLoading || isParsingPdf || isExtracting}
-                className={`w-full py-4 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2.5 shadow-xl transition-all duration-300 hover:scale-[1.01] uppercase ${
-                  isLoading
-                    ? "bg-slate-800 text-slate-500 cursor-not-allowed shadow-none"
-                    : "bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 shadow-[#EAE5D8]/5 hover:shadow-[#EAE5D8]/10 active:scale-[0.99]"
-                }`}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="h-4.5 w-4.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div>
-                    Streaming Optimizations...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
-                    {activeTab === "resume" ? "Optimize Portfolio Resume" : "Compose Tailored Cover Letter"}
-                  </>
-                )}
-              </button>
-            </section>
-
-            {/* Right Preview/Output Panel (7 Columns) */}
-            <section className="lg:col-span-7 flex flex-col gap-4">
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-6 shadow-xl flex-1 flex flex-col min-h-[500px]">
-                
-                {/* Split Tabs & Controls Header */}
-                <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 gap-4">
-                  <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-900">
-                    <button
-                      onClick={() => setActiveTab("resume")}
-                      className={`px-4 py-2 text-xs font-bold rounded-lg transition duration-200 ${
-                        activeTab === "resume"
-                          ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
-                          : "text-slate-400 hover:text-slate-250"
-                      }`}
-                    >
-                      Tailored Resume Preview
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("cover-letter")}
-                      className={`px-4 py-2 text-xs font-bold rounded-lg transition duration-200 ${
-                        activeTab === "cover-letter"
-                          ? "bg-[#EAE5D8] text-slate-950 shadow-md shadow-[#EAE5D8]/5"
-                          : "text-slate-400 hover:text-slate-250"
-                      }`}
-                    >
-                      Cover Letter
-                    </button>
-                  </div>
-
-                  {/* Utility Canvas controls */}
-                  {canvasText && (
-                    <div className="flex items-center gap-2">
-                      {isLoading && (
-                        <button
-                          onClick={stop}
-                          className="text-xs bg-slate-950 border border-slate-800 hover:border-rose-900/40 px-3 py-2 rounded-lg text-rose-400 hover:bg-rose-950/20 font-semibold transition animate-fadeIn"
-                        >
-                          Stop
-                        </button>
-                      )}
-                      <button
-                        onClick={handleCopyToClipboard}
-                        className="text-xs bg-slate-950 border border-slate-800 hover:border-slate-700 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-900 font-semibold transition flex items-center gap-1.5"
-                      >
-                        {copySuccess ? (
-                          <>
-                            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                            </svg>
-                            Copy
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={handleExportAsMarkdown}
-                        className="text-xs bg-slate-950 border border-slate-800 hover:border-slate-700 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-900 font-semibold transition flex items-center gap-1.5"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Export .md
-                      </button>
-                    </div>
-                  )}
+              {/* Target Position Card */}
+              <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-[#233B57] pb-3">
+                  <h2 className="font-mono text-xs font-bold tracking-widest text-[#F4EFE6] uppercase">
+                    TARGET POSITION
+                  </h2>
                 </div>
 
-                {/* Live Streaming Text Canvas */}
-                <div className="flex-1 flex flex-col mt-4 min-h-[350px]">
-                  {canvasText ? (
-                    <div className="flex-1 flex flex-col gap-4">
-                      <div className="flex-1 bg-slate-950 border border-slate-900 rounded-xl p-5 overflow-auto max-h-[550px] shadow-inner relative">
-                        {/* Active streaming indicators */}
-                        {isLoading && (
-                          <span className="absolute top-4 right-4 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                          </span>
-                        )}
-                        <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed selection:bg-amber-500/20">
-                          {canvasText}
-                        </pre>
-                      </div>
+                {/* Option 1: Paste job description */}
+                <div 
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="bg-[#0F1E2C]/70 border border-[#233B57] hover:border-[#C9A961]/40 rounded-xl p-4 transition cursor-pointer flex items-center justify-between group shadow-sm"
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-bold text-[#F4EFE6] group-hover:text-[#C9A961] transition">Paste a job description</span>
+                    <span className="text-[9px] text-slate-500 font-mono uppercase tracking-widest">TEXT OR URL</span>
+                  </div>
+                  <span className="text-[#C9A961] font-bold group-hover:translate-x-1 transition-transform">→</span>
+                </div>
 
-                      {/* Premium Download Kit Action Button (Triggers Authentication Modal) */}
-                      <button
-                        onClick={() => setIsAuthModalOpen(true)}
-                        className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 text-[#EAE5D8] font-bold text-xs tracking-wider rounded-xl border border-[#EAE5D8]/50 hover:border-[#EAE5D8] shadow-lg shadow-white/5 flex items-center justify-center gap-2 uppercase transition-all duration-200"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Download Formatted PDF Kit
-                      </button>
-                    </div>
+                {/* Option 2: Browse ATS Feed */}
+                <div 
+                  onClick={() => {
+                    setActiveView("discover");
+                    showToast("📡 Switched to Aggregated Job Feed", "success");
+                  }}
+                  className="bg-[#C9A961] hover:bg-[#C9A961]/90 text-[#0F1E2C] rounded-xl p-4 transition cursor-pointer flex items-center justify-between shadow-md group"
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-bold">Browse live ATS feed</span>
+                    <span className="text-[9px] opacity-75 font-mono uppercase tracking-widest">GREENHOUSE • LEVER</span>
+                  </div>
+                  <span className="font-bold group-hover:translate-x-1 transition-transform">→</span>
+                </div>
+
+                {isExtracted && (
+                  <div className="border-t border-[#233B57] pt-3 mt-1 flex flex-col gap-1">
+                    <span className="text-[8px] text-slate-500 font-mono uppercase">Current Target</span>
+                    <span className="text-xs font-bold text-[#C9A961] leading-tight truncate">{extractedTitle}</span>
+                    <span className="text-[10px] text-slate-350 truncate">{extractedCompany}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Direction Matrix Card */}
+              <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-[#233B57] pb-3">
+                  <h2 className="font-mono text-xs font-bold tracking-widest text-[#F4EFE6] uppercase">
+                    DIRECTION MATRIX
+                  </h2>
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={directionMatrix}
+                  onChange={(e) => setDirectionMatrix(e.target.value)}
+                  placeholder="Optional: emphasize Python over Go, lead with growth metrics, keep tone humble..."
+                  className="w-full bg-[#0F1E2C] border border-[#233B57] rounded-xl p-3 text-xs text-[#F4EFE6] focus:outline-none focus:ring-1 focus:ring-[#C9A961]/40 focus:border-[#C9A961] resize-none font-sans leading-relaxed"
+                />
+
+                <button
+                  onClick={handleTailorMaterials}
+                  disabled={isLoading || isParsingPdf || isExtracting}
+                  className={`w-full py-3.5 rounded-full font-bold text-xs tracking-wider flex items-center justify-center gap-2 shadow-lg transition active:scale-98 duration-200 uppercase ${
+                    isLoading
+                      ? "bg-[#233B57] text-slate-500 cursor-not-allowed shadow-none"
+                      : "bg-gradient-to-r from-[#C9A961] to-[#E2C784] hover:from-[#E2C784] hover:to-[#C9A961] text-[#0F1E2C] shadow-[#C9A961]/10"
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="h-4.5 w-4.5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                      Tailoring...
+                    </>
                   ) : (
-                    <div className="flex-1 border border-slate-900 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 p-8 text-center text-slate-600">
-                      <svg className="w-8 h-8 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <h3 className="font-semibold text-slate-500 text-xs uppercase tracking-wider">No tailored content generated</h3>
-                      <p className="text-xs max-w-xs text-slate-600">Analyze the opportunity and submit your portfolio documents to begin streaming tailored results.</p>
-                    </div>
+                    <>
+                      <span>✨ Tailor application</span>
+                    </>
                   )}
+                </button>
+              </div>
+            </section>
+
+            {/* Center Canvas Column (6 Columns) */}
+            <section className="lg:col-span-6 flex flex-col gap-4">
+              
+              {/* Document Header Tab Switchers & Printing Controls */}
+              <div className="flex items-center justify-between border-b border-[#233B57] pb-4 gap-4 flex-wrap">
+                {/* Switcher Toggles */}
+                <div className="flex bg-[#0F1E2C]/40 p-1 border border-[#233B57] rounded-full shrink-0">
+                  <button
+                    onClick={() => setActiveTab("resume")}
+                    className={`px-5 py-2 text-xs font-semibold rounded-full transition duration-200 uppercase tracking-wide ${
+                      activeTab === "resume"
+                        ? "bg-[#233B57] text-[#F4EFE6] shadow-sm"
+                        : "text-slate-400 hover:text-[#F4EFE6]"
+                    }`}
+                  >
+                    Résumé
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("cover-letter")}
+                    className={`px-5 py-2 text-xs font-semibold rounded-full transition duration-200 uppercase tracking-wide ${
+                      activeTab === "cover-letter"
+                        ? "bg-[#233B57] text-[#F4EFE6] shadow-sm"
+                        : "text-slate-400 hover:text-[#F4EFE6]"
+                    }`}
+                  >
+                    Cover letter
+                  </button>
+                </div>
+
+                {/* Print and Export Controls */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCopyToClipboard}
+                    className="px-3.5 py-1.5 bg-[#0F1E2C]/60 hover:bg-[#0F1E2C] border border-[#233B57] text-[#F4EFE6] hover:text-white text-xs font-mono rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {copySuccess ? "Copied!" : (
+                      <>
+                        <svg className="w-3.5 h-3.5 text-[#C9A961]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Copy
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleExportPDF}
+                    className="px-3.5 py-1.5 bg-[#C9A961] hover:bg-[#C9A961]/90 text-[#0F1E2C] text-xs font-mono font-bold rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export PDF
+                  </button>
+                </div>
+              </div>
+
+              {/* Core Render Canvas Workspace */}
+              <div className="flex-1 flex flex-col min-h-[500px]">
+                {canvasText ? (
+                  <div className="flex-1 flex flex-col gap-4">
+                    {/* Floating physical paper document canvas */}
+                    <div className="bg-[#F4EFE6] text-[#0F1E2C] border border-[#C9A961]/35 rounded-xl shadow-2xl p-10 font-sans min-h-[620px] max-h-[820px] overflow-auto transition-all duration-300 relative floating-paper selection:bg-[#C9A961]/35">
+                      {isLoading && (
+                        <span className="absolute top-4 right-4 flex h-2.5 w-2.5 z-20">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C9A961] opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#C9A961]"></span>
+                        </span>
+                      )}
+                      
+                      <div className="text-left font-sans text-slate-800 leading-relaxed text-[13px]">
+                        {/* Custom Paper Formatter */}
+                        {canvasText.split("\n").map((line, idx) => {
+                          if (line.startsWith("# ")) {
+                            return <h1 key={idx} className="text-2xl font-bold font-serif text-center text-[#0F1E2C] border-b-2 border-[#C9A961] pb-2 mb-6 uppercase tracking-wider">{line.replace("# ", "")}</h1>;
+                          }
+                          if (line.startsWith("## ")) {
+                            return <h2 key={idx} className="text-xs font-bold font-mono tracking-widest text-[#0F1E2C] border-b border-[#C9A961]/50 pb-1 mt-6 mb-3 uppercase">{line.replace("## ", "")}</h2>;
+                          }
+                          if (line.startsWith("### ")) {
+                            return <h3 key={idx} className="text-[11px] font-bold font-mono text-[#0F1E2C] mt-4 mb-2 uppercase">{line.replace("### ", "")}</h3>;
+                          }
+                          if (line.startsWith("- ") || line.startsWith("* ")) {
+                            return <li key={idx} className="text-[12px] leading-relaxed text-slate-800 list-disc ml-5 mb-1">{line.substring(2)}</li>;
+                          }
+                          if (line.trim() === "---") {
+                            return <hr key={idx} className="my-5 border-[#C9A961]/30" />;
+                          }
+                          return <p key={idx} className="text-[12px] leading-relaxed text-slate-800 mb-2">{line}</p>;
+                        })}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setIsAuthModalOpen(true)}
+                      className="w-full py-3.5 bg-[#0F1E2C]/50 hover:bg-[#0F1E2C] text-[#F4EFE6] font-bold text-xs tracking-wider rounded-xl border border-[#233B57] hover:border-[#C9A961]/50 shadow-md flex items-center justify-center gap-2 uppercase transition-all duration-200 cursor-pointer"
+                    >
+                      <svg className="w-4 h-4 text-[#C9A961]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download Formatted PDF Kit
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 gap-4 border border-dashed border-[#233B57] rounded-xl min-h-[500px] bg-[#0F1E2C]/10 select-none">
+                    <div className="h-10 w-10 bg-[#0F1E2C] border border-[#C9A961]/30 rounded-xl flex items-center justify-center text-[#C9A961] text-lg shadow-md">
+                      ❖
+                    </div>
+                    <div className="font-mono tracking-widest text-[9px] text-[#C9A961]/80 uppercase border-b border-[#233B57] pb-1">
+                      CANVAS READY
+                    </div>
+                    <h2 className="text-4xl md:text-5xl text-[#F4EFE6] font-serif font-light leading-snug tracking-tight max-w-md">
+                      Upload. Target. <br />
+                      <span className="bg-gradient-to-r from-[#C9A961] via-[#E2C784] to-[#C9A961] bg-clip-text text-transparent italic font-serif">Tailor.</span>
+                    </h2>
+                    <p className="text-xs max-w-sm text-slate-400 font-sans leading-relaxed mt-1">
+                      Your generated résumé and cover letter will materialise here — section by section.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Right Control Panel (3 Columns) */}
+            <section className="lg:col-span-3 flex flex-col gap-6">
+              
+              {/* Vector Alignment circular score gauge */}
+              <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-[#233B57] pb-3">
+                  <h2 className="font-mono text-xs font-bold tracking-widest text-[#F4EFE6] uppercase">
+                    VECTOR ALIGNMENT
+                  </h2>
+                </div>
+
+                {/* Score Circular gauge with gold gradient outline */}
+                <div className="flex flex-col items-center justify-center py-4 relative select-none">
+                  <svg className="w-32 h-32" viewBox="0 0 36 36">
+                    <defs>
+                      <linearGradient id="goldCircleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#C9A961" />
+                        <stop offset="50%" stopColor="#E2C784" />
+                        <stop offset="100%" stopColor="#C9A961" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#233B57" strokeWidth="2.2" />
+                    <circle 
+                      cx="18" 
+                      cy="18" 
+                      r="15.915" 
+                      fill="none" 
+                      stroke="url(#goldCircleGrad)" 
+                      strokeWidth="2.2" 
+                      strokeDasharray={`${extractedCompany ? 93 : 0} 100`} 
+                      strokeDashoffset="0" 
+                      strokeLinecap="round" 
+                      className="origin-center -rotate-90 transition-all duration-1000" 
+                    />
+                    <text x="18" y="19" className="fill-[#F4EFE6] font-mono text-[7px] font-bold text-center" textAnchor="middle">
+                      {extractedCompany ? "93%" : "0%"}
+                    </text>
+                    <text x="18" y="24" className="fill-slate-500 font-mono text-[3px] tracking-widest text-center" textAnchor="middle">MATCH</text>
+                  </svg>
+                </div>
+
+                <div className="border-y border-[#233B57] py-1.5 font-mono text-[9px] tracking-widest text-[#C9A961]/80 text-center uppercase font-semibold">
+                  PROFILE ◆ ROLE
+                </div>
+              </div>
+
+              {/* Qualification Gaps check list */}
+              <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-[#233B57] pb-3">
+                  <h2 className="font-mono text-xs font-bold tracking-widest text-[#F4EFE6] uppercase">
+                    QUALIFICATION GAPS
+                  </h2>
+                </div>
+
+                {extractedCompany ? (
+                  <div className="flex flex-col gap-3">
+                    {[
+                      "Lacks explicit infrastructure tooling certifications",
+                      "Demonstrates lesser visual presentation history",
+                      "Missing clear microservice architecture metrics"
+                    ].map((gap, i) => (
+                      <div key={i} className="flex items-start gap-2.5 animate-fadeIn">
+                        <span className="h-4.5 w-4.5 rounded bg-[#C9A961] text-[#0F1E2C] flex items-center justify-center shrink-0 text-[10px] font-bold shadow-md">✓</span>
+                        <span className="text-xs text-slate-350 font-sans leading-normal">{gap}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-xs italic text-slate-500 font-sans">Generate to reveal gaps</span>
+                )}
+              </div>
+
+              {/* Archive Records */}
+              <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-[#233B57] pb-3">
+                  <h2 className="font-mono text-xs font-bold tracking-widest text-[#F4EFE6] uppercase">
+                    ARCHIVE
+                  </h2>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {[
+                    { title: "Product Manager, Advanced Enterprise D...", company: "Google", score: 82 },
+                    { title: "Product Manager, Advanced Enterprise D...", company: "Google", score: 82 }
+                  ].map((item, i) => (
+                    <div 
+                      key={i} 
+                      className="bg-[#0F1E2C]/70 border border-[#233B57] hover:border-[#C9A961]/40 rounded-xl p-3.5 transition cursor-pointer shadow-sm flex flex-col gap-1.5 group"
+                    >
+                      <span className="text-xs font-bold text-[#F4EFE6] group-hover:text-[#C9A961] transition truncate">{item.title}</span>
+                      <span className="text-[9px] text-slate-500 font-mono uppercase tracking-wider">
+                        {item.company} — <span className="text-[#C9A961] font-semibold">{item.score}%</span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>

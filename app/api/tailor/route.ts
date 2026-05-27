@@ -3,7 +3,7 @@ import { streamText } from "ai";
 
 export async function POST(req: Request) {
   try {
-    const { profile, jobDescription, company, jobId, mode } = await req.json();
+    const { profile, jobDescription, company, jobId, mode, directionMatrix } = await req.json();
 
     if (!profile || !jobDescription) {
       return new Response(
@@ -47,6 +47,8 @@ ${jobDescription}
 Candidate Consolidated Portfolio (Synthesize achievements and details from these documents):
 ${profile}
 
+${directionMatrix ? `\n--- CANDIDATE DIRECTION MATRIX INSTRUCTIONS (Follow these strictly):\n${directionMatrix}\n` : ""}
+
 ---
 Requirements for the Cover Letter:
 1. Format as a professional business letter using clean Markdown.
@@ -65,6 +67,8 @@ ${jobDescription}
 
 Candidate Consolidated Portfolio (Synthesize achievements and details from these documents):
 ${profile}
+
+${directionMatrix ? `\n--- CANDIDATE DIRECTION MATRIX INSTRUCTIONS (Follow these strictly):\n${directionMatrix}\n` : ""}
 
 ---
 Requirements for the Tailored Resume:
