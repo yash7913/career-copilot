@@ -305,26 +305,52 @@ export default function SaaSWorkspacePage() {
 
         const data = await response.json();
         const text = data.text || "";
-
         // Heuristic relevance analysis
+        const lowercaseText = text.toLowerCase();
         const keywords = ["experience", "education", "resume", "skills", "cv", "projects", "work", "presentation", "slide", "portfolio", "sheet"];
-        const isProfileRelated = keywords.some(kw => text.toLowerCase().includes(kw));
+        const isProfileRelated = keywords.some(kw => lowercaseText.includes(kw));
 
         if (!isProfileRelated) {
           hasIrrelevant = true;
           continue; // skip irrelevant document
         }
 
+        // Deep classification evaluation to determine if it is a Resume, Project Detail Sheet, or Technical Slides
+        let fileType: "Resume" | "Project Detail Sheet" | "Technical Slides" = "Resume";
+        
+        const slideIndicators = ["slide", "presentation", "deck", "slide 1", "agenda", "key takeaways", "bullet point", "powerpoint", "ppt", "speaker notes"];
+        const resumeIndicators = ["curriculum vitae", "education background", "professional experience", "work experience", "skills summary", "employment history", "certificates", "languages spoken"];
+        const projectIndicators = ["technical specification", "system design", "architecture diagram", "database schema", "api routes", "repo", "github", "milestone", "implementation plan", "project details", "technical details"];
+
+        // Score based on occurrences
+        let slideScore = slideIndicators.reduce((count, kw) => count + (lowercaseText.split(kw).length - 1), 0);
+        let resumeScore = resumeIndicators.reduce((count, kw) => count + (lowercaseText.split(kw).length - 1), 0);
+        let projectScore = projectIndicators.reduce((count, kw) => count + (lowercaseText.split(kw).length - 1), 0);
+
+        // Standard keyword presence boosts
+        if (lowercaseText.includes("resume") || lowercaseText.includes("cv")) resumeScore += 5;
+        if (lowercaseText.includes("experience") && lowercaseText.includes("education")) resumeScore += 5;
+        if (lowercaseText.includes("slide") || lowercaseText.includes("deck") || lowercaseText.includes("presentation")) slideScore += 5;
+        if (lowercaseText.includes("project") || lowercaseText.includes("technical") || lowercaseText.includes("architecture")) projectScore += 3;
+
+        if (slideScore > resumeScore && slideScore > projectScore) {
+          fileType = "Technical Slides";
+        } else if (projectScore > resumeScore && projectScore > slideScore) {
+          fileType = "Project Detail Sheet";
+        } else {
+          fileType = "Resume";
+        }
+
         parsedResults.push({
           id: Math.random().toString(36).substring(7),
           name: file.name,
-          type: "Resume" as const, // default type
+          type: fileType,
           text: text,
         });
       }
 
       if (hasIrrelevant) {
-        showToast("Unknown file discovered and disregarded", "warning");
+        showToast("unknownn file discovered and disregarded", "warning");
       }
 
       if (parsedResults.length > 0) {
