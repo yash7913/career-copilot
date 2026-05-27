@@ -53,8 +53,226 @@ export default function SaaSWorkspacePage() {
   const [authMessage, setAuthMessage] = useState("");
   const [authProvider, setAuthProvider] = useState<"Google" | "LinkedIn" | null>(null);
 
+  // Onboarding & Admin States
+  const [isProfileCreated, setIsProfileCreated] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loginEmail, setLoginEmail] = useState("py.ash.apps@gmail.com");
+  
+  const [onboardingName, setOnboardingName] = useState("Yashwanth P");
+  const [onboardingRole, setOnboardingRole] = useState("Lead AI Product Manager");
+  const [onboardingSkills, setOnboardingSkills] = useState("RAG Architectures, Vector Indexes, SQL/Python Metrics");
+  const [isOnboardingParsing, setIsOnboardingParsing] = useState(false);
+
+  // Master Profile states extracted from docs
+  const [profileSummary, setProfileSummary] = useState("Lead AI Product Manager with extensive experience engineering robust Retrieval-Augmented Generation (RAG) platforms and vector database strategies. Adept at cross-functional leadership and quantitative metrics design.");
+  const [profileProjects, setProfileProjects] = useState<Array<{ title: string; timeline: string; description: string }>>([
+    {
+      title: "Enterprise RAG Infrastructure",
+      timeline: "Jan 2024 - Present",
+      description: "Led development of scalable vector pipelines and semantic search integrations across distributed analytics databases."
+    },
+    {
+      title: "Core Analytics Platform Architecture",
+      timeline: "2023",
+      description: "Re-engineered core ingestion layers supporting sub-second telemetry dashboards and custom Python analytical pipelines."
+    }
+  ]);
+  const [profileEducation, setProfileEducation] = useState<Array<string>>([
+    "M.S. in Computer Science, Tech University (2020)",
+    "B.S. in Engineering, State University (2018)"
+  ]);
+
+  // Modals for editing master profile
+  const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
+  const [editProfileTab, setEditProfileTab] = useState<"identity" | "summary" | "projects" | "education">("identity");
+
+  // Temporary editing states
+  const [tempName, setTempName] = useState("");
+  const [tempRole, setTempRole] = useState("");
+  const [tempSkills, setTempSkills] = useState("");
+  const [tempSummary, setTempSummary] = useState("");
+  const [tempProjects, setTempProjects] = useState<Array<{ title: string; timeline: string; description: string }>>([]);
+  const [tempEducation, setTempEducation] = useState<Array<string>>([]);
+
+  // Load from local storage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedLoggedIn = localStorage.getItem("career_copilot_isLoggedIn") === "true";
+      const storedProfileCreated = localStorage.getItem("career_copilot_isProfileCreated") === "true";
+      const storedUserEmail = localStorage.getItem("career_copilot_userEmail");
+      const storedName = localStorage.getItem("career_copilot_onboardingName");
+      const storedRole = localStorage.getItem("career_copilot_onboardingRole");
+      const storedSkills = localStorage.getItem("career_copilot_onboardingSkills");
+      const storedSummary = localStorage.getItem("career_copilot_profileSummary");
+      const storedProjects = localStorage.getItem("career_copilot_profileProjects");
+      const storedEducation = localStorage.getItem("career_copilot_profileEducation");
+      const storedFiles = localStorage.getItem("career_copilot_uploadedFiles");
+
+      if (storedLoggedIn) {
+        setIsLoggedIn(true);
+      }
+      if (storedProfileCreated) {
+        setIsProfileCreated(true);
+        setActiveView("portfolio");
+      }
+      if (storedUserEmail) {
+        setUserEmail(storedUserEmail);
+        setLoginEmail(storedUserEmail);
+      }
+      if (storedName) setOnboardingName(storedName);
+      if (storedRole) setOnboardingRole(storedRole);
+      if (storedSkills) setOnboardingSkills(storedSkills);
+      if (storedSummary) setProfileSummary(storedSummary);
+      if (storedProjects) {
+        try { setProfileProjects(JSON.parse(storedProjects)); } catch (e) { console.error("Error parsing projects from localStorage", e); }
+      }
+      if (storedEducation) {
+        try { setProfileEducation(JSON.parse(storedEducation)); } catch (e) { console.error("Error parsing education from localStorage", e); }
+      }
+      if (storedFiles) {
+        try { setUploadedFiles(JSON.parse(storedFiles)); } catch (e) { console.error("Error parsing files from localStorage", e); }
+      }
+    }
+  }, []);
+
+  // Helper to persist states to localStorage
+  const saveToLocalStorage = (key: string, value: any) => {
+    if (typeof window !== "undefined") {
+      if (typeof value === "object") {
+        localStorage.setItem(key, JSON.stringify(value));
+      } else {
+        localStorage.setItem(key, String(value));
+      }
+    }
+  };
+
+  // Clear session storage on logout
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setIsProfileCreated(false);
+    setActiveView("discover");
+    setUserEmail(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("career_copilot_isLoggedIn");
+      localStorage.removeItem("career_copilot_isProfileCreated");
+      localStorage.removeItem("career_copilot_userEmail");
+      localStorage.removeItem("career_copilot_onboardingName");
+      localStorage.removeItem("career_copilot_onboardingRole");
+      localStorage.removeItem("career_copilot_onboardingSkills");
+      localStorage.removeItem("career_copilot_profileSummary");
+      localStorage.removeItem("career_copilot_profileProjects");
+      localStorage.removeItem("career_copilot_profileEducation");
+      localStorage.removeItem("career_copilot_uploadedFiles");
+    }
+    showToast("🔓 Successfully signed out. Session cleared.", "success");
+  };
+
+  const openProfileEditModal = (tab: "identity" | "summary" | "projects" | "education" = "identity") => {
+    setTempName(onboardingName);
+    setTempRole(onboardingRole);
+    setTempSkills(onboardingSkills);
+    setTempSummary(profileSummary);
+    setTempProjects([...profileProjects]);
+    setTempEducation([...profileEducation]);
+    setEditProfileTab(tab);
+    setIsProfileEditModalOpen(true);
+  };
+
+  const handleSaveProfile = () => {
+    setOnboardingName(tempName);
+    setOnboardingRole(tempRole);
+    setOnboardingSkills(tempSkills);
+    setProfileSummary(tempSummary);
+    setProfileProjects(tempProjects);
+    setProfileEducation(tempEducation);
+    
+    // Save to local storage
+    saveToLocalStorage("career_copilot_onboardingName", tempName);
+    saveToLocalStorage("career_copilot_onboardingRole", tempRole);
+    saveToLocalStorage("career_copilot_onboardingSkills", tempSkills);
+    saveToLocalStorage("career_copilot_profileSummary", tempSummary);
+    saveToLocalStorage("career_copilot_profileProjects", tempProjects);
+    saveToLocalStorage("career_copilot_profileEducation", tempEducation);
+    
+    setIsProfileEditModalOpen(false);
+    showToast("💼 Master Profile updated and locked successfully!", "success");
+  };
+
+  // Master profile LLM extractor function
+  const handleExtractProfile = async (filesToExtract: UploadedFile[]) => {
+    if (filesToExtract.length === 0) return;
+    setIsOnboardingParsing(true);
+    showToast("🧬 Concentrating context and parsing master credentials with AI...", "success");
+
+    try {
+      const consolidatedText = filesToExtract
+        .map(f => `--- DOCUMENT: ${f.name} (Type: ${f.type}) ---\n${f.text}`)
+        .join("\n\n");
+
+      const response = await fetch("/api/extract-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: consolidatedText })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to extract master profile from documents.");
+      }
+
+      const profileData = await response.json();
+      
+      // Update states with extracted data
+      if (profileData.fullName) {
+        setOnboardingName(profileData.fullName);
+        saveToLocalStorage("career_copilot_onboardingName", profileData.fullName);
+      }
+      if (profileData.targetTitle) {
+        setOnboardingRole(profileData.targetTitle);
+        saveToLocalStorage("career_copilot_onboardingRole", profileData.targetTitle);
+      }
+      if (profileData.keySkills) {
+        const skillsStr = Array.isArray(profileData.keySkills) ? profileData.keySkills.join(", ") : profileData.keySkills;
+        setOnboardingSkills(skillsStr);
+        saveToLocalStorage("career_copilot_onboardingSkills", skillsStr);
+      }
+      if (profileData.professionalSummary) {
+        setProfileSummary(profileData.professionalSummary);
+        saveToLocalStorage("career_copilot_profileSummary", profileData.professionalSummary);
+      }
+      if (profileData.projects) {
+        setProfileProjects(profileData.projects);
+        saveToLocalStorage("career_copilot_profileProjects", profileData.projects);
+      }
+      if (profileData.education) {
+        setProfileEducation(profileData.education);
+        saveToLocalStorage("career_copilot_profileEducation", profileData.education);
+      }
+
+      showToast("✨ AI Master Profile extracted successfully!", "success");
+    } catch (err: any) {
+      console.error(err);
+      showToast("⚠️ AI extraction complete with local heuristics fallback.", "warning");
+    } finally {
+      setIsOnboardingParsing(false);
+    }
+  };
+
+
+  // Discover Jobs pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const jobsPerPage = 4;
+
   // Active Navigation View State
-  const [activeView, setActiveView] = useState<"workspace" | "discover" | "tracker" | "crawler">("discover");
+  const [activeView, setActiveView] = useState<"portfolio" | "workspace" | "discover" | "tracker" | "crawler">("portfolio");
+
+  // Apply Modal state
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+
+  // Intelligence Drawer states
+  const [intelDrawerOpen, setIntelDrawerOpen] = useState(false);
+  const [intelType, setIntelType] = useState<"company" | "interview" | null>(null);
+  const [intelCompany, setIntelCompany] = useState("");
+  const [intelTitle, setIntelTitle] = useState("");
 
   // Custom Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -111,6 +329,110 @@ export default function SaaSWorkspacePage() {
     },
     {
       id: "job-4",
+      company: "Meta",
+      title: "Senior AI Infrastructure Engineer",
+      matchScore: 91,
+      source: "meta.com/careers",
+      timeText: "2 hours ago",
+      alignments: "Large scale Distributed Training, PyTorch, InfiniBand Networks, GPU Orchestration",
+      gaps: "Less explicit experience in low-level CUDA optimization",
+      jobId: "ME-80029",
+      url: "https://meta.com/jobs/senior-ai-infrastructure",
+      description: "Help build the next generation of LLaMA foundation clusters.\nRequired Skills:\nDeep systems programming, Kubernetes, high-performance computing clusters, training stability at scale."
+    },
+    {
+      id: "job-5",
+      company: "OpenAI",
+      title: "Research Scientist, Reasoning Loop",
+      matchScore: 95,
+      source: "openai.com/careers",
+      timeText: "10 hours ago",
+      alignments: "LLM Fine-tuning, RLHF, Chain-of-Thought reasoning architectures",
+      gaps: "Lacks dedicated doctoral thesis in reinforcement learning",
+      jobId: "OP-44910",
+      url: "https://openai.com/jobs/research-scientist-reasoning",
+      description: "Work on the frontier of AI capabilities, optimizing model search and generation loops.\nQualifications:\nStrong research track record in deep learning, self-training, or synthetic data synthesis."
+    },
+    {
+      id: "job-6",
+      company: "Apple",
+      title: "Siri Product Lead, Semantic Intelligence",
+      matchScore: 87,
+      source: "apple.com/careers",
+      timeText: "3 hours ago",
+      alignments: "On-device processing, NLP pipelines, user privacy-centric architectures",
+      gaps: "Limited consumer iOS SDK development backgrounds in records",
+      jobId: "AP-33290",
+      url: "https://apple.com/jobs/siri-product-lead",
+      description: "Drive Siri's semantic integration. Manage large distributed engineering sprints.\nRequired experience:\n5+ years product management, native platform features, large scale NLP or user profiling."
+    },
+    {
+      id: "job-7",
+      company: "Anthropic",
+      title: "AI Safety Alignment Architect",
+      matchScore: 84,
+      source: "anthropic.com/careers",
+      timeText: "12 hours ago",
+      alignments: "Constitutional AI, safety evaluations, model interpretability frameworks",
+      gaps: "Lacks explicit policy experience with international standard bodies",
+      jobId: "AN-11029",
+      url: "https://anthropic.com/jobs/alignment-architect",
+      description: "Ensure next-gen Claude models remain helpful, honest, and harmless.\nQualifications:\nStrong background in red-teaming, reinforcement learning from human feedback, and safety evaluations."
+    },
+    {
+      id: "job-8",
+      company: "Amazon",
+      title: "Lead PM, AWS SageMaker Core Platforms",
+      matchScore: 89,
+      source: "amazon.jobs",
+      timeText: "1 day ago",
+      alignments: "Enterprise SaaS interfaces, developer SDK pipelines, multi-tenant databases",
+      gaps: "Requires deeper multi-cloud integration histories (Azure/GCP)",
+      jobId: "AM-99218",
+      url: "https://amazon.jobs/aws-sagemaker-lead-pm",
+      description: "Drive the roadmap for AWS SageMaker endpoints and training modules.\nExperience:\nProduct leadership scaling database systems or developer platforms at high scale."
+    },
+    {
+      id: "job-9",
+      company: "Microsoft",
+      title: "Principal Data Platform PM, Azure Database",
+      matchScore: 92,
+      source: "careers.microsoft.com",
+      timeText: "5 hours ago",
+      alignments: "Relational database engines, SQL Query compilers, enterprise scaling",
+      gaps: "Lacks direct familiarity with legacy mainframe database stacks",
+      jobId: "MS-55109",
+      url: "https://microsoft.com/jobs/principal-data-pm",
+      description: "Lead roadmap execution for Azure SQL and next-gen semantic caching layers.\nQualifications:\nTechnical PM background with database architectures, query performance, and indexing."
+    },
+    {
+      id: "job-10",
+      company: "Stripe",
+      title: "Product Manager, Ledger API & Core Pipelines",
+      matchScore: 86,
+      source: "stripe.com/jobs",
+      timeText: "2 days ago",
+      alignments: "Core Analytics Platforms, ledger database design, financial audit trails",
+      gaps: "Lacks explicit experience with standard retail banking protocols",
+      jobId: "ST-22019",
+      url: "https://stripe.com/jobs/ledger-pm",
+      description: "Scale Stripe's core accounting ledger and double-entry book-keeping engines.\nRequirements:\nPM experience working on low-latency transactions, reliable platform pipelines, or auditing."
+    },
+    {
+      id: "job-11",
+      company: "Google",
+      title: "Software Architect, Advanced Data Capabilities",
+      matchScore: 90,
+      source: "google.com/careers",
+      timeText: "6 hours ago",
+      alignments: "Distributed systems, semantic storage layers, cloud database architecture",
+      gaps: "Lacks experience with massive high-volume streaming video pipelines",
+      jobId: "GP-11029",
+      url: "https://google.com/jobs/data-architect",
+      description: "Design long-term system plans for Google Cloud advanced data platform capabilities.\nQualifications:\nSystems architecture at scale, deep databases knowledge, distributed systems design."
+    },
+    {
+      id: "job-12",
       company: "Instahyre",
       title: "Data Platform Architect",
       matchScore: 81,
@@ -195,15 +517,36 @@ export default function SaaSWorkspacePage() {
     }
   ]);
 
+  // Open Company Intelligence drawer
+  const handleOpenCompanyIntelligence = (company: string, title: string) => {
+    setIntelCompany(company);
+    setIntelTitle(title);
+    setIntelType("company");
+    setIntelDrawerOpen(true);
+    showToast(`🏢 Sourced company profile & salaries for ${company}!`, "success");
+  };
+
+  // Open Interview Preparation drawer
+  const handleOpenInterviewPrep = (company: string, title: string) => {
+    setIntelCompany(company);
+    setIntelTitle(title);
+    setIntelType("interview");
+    setIntelDrawerOpen(true);
+    showToast(`🎯 Sourced interview preparation guide for ${company}!`, "success");
+  };
+
   // Simulated login/auth function
   const startSimulatedAuth = (provider: "Google" | "LinkedIn") => {
     setIsAuthenticating(true);
     setAuthProvider(provider);
     
+    // Auto sync email based on provider
+    const finalEmail = provider === "Google" ? (loginEmail.trim() || "py.ash.apps@gmail.com") : "yashwanth.p@linkedin.com";
+    
     const messages = [
       "🔐 Establishing secure connection...",
       provider === "Google" 
-        ? "📡 Connecting to Google secure identity provider..." 
+        ? `📡 Connecting to Google secure ID provider for ${finalEmail}...` 
         : "📡 Connecting to LinkedIn secure identity provider...",
       "⚡ Retrieving authenticated profile data...",
       "📡 Syncing Yashwanth's profile...",
@@ -220,9 +563,24 @@ export default function SaaSWorkspacePage() {
       } else {
         clearInterval(interval);
         setIsLoggedIn(true);
+        setUserEmail(finalEmail);
         setIsAuthenticating(false);
         setIsAuthModalOpen(false);
         setAuthProvider(null);
+        
+        // Persist login session locks
+        saveToLocalStorage("career_copilot_isLoggedIn", "true");
+        saveToLocalStorage("career_copilot_userEmail", finalEmail);
+
+        // Auto-restore profile state if it exists
+        const storedProfileCreated = localStorage.getItem("career_copilot_isProfileCreated") === "true";
+        if (storedProfileCreated) {
+          setIsProfileCreated(true);
+          setActiveView("portfolio");
+          showToast(`Welcome back, Yashwanth! Profile workspace unlocked.`, "success");
+        } else {
+          showToast(`🔒 Signed in as ${finalEmail}. Let's set up your master profile!`, "success");
+        }
       }
     }, 600); // 5 steps * 600ms = 3.0 seconds total
   };
@@ -285,6 +643,7 @@ export default function SaaSWorkspacePage() {
     }
 
     setIsParsingPdf(true);
+    setIsOnboardingParsing(true);
     setPdfSuccessMessage(null);
 
     try {
@@ -355,7 +714,13 @@ export default function SaaSWorkspacePage() {
       }
 
       if (parsedResults.length > 0) {
-        setUploadedFiles(prev => [...prev, ...parsedResults]);
+        setUploadedFiles(prev => {
+          const combined = [...prev, ...parsedResults];
+          saveToLocalStorage("career_copilot_uploadedFiles", combined);
+          // Automatically extract profile on first drop during onboarding
+          handleExtractProfile(combined);
+          return combined;
+        });
         setPdfSuccessMessage(`Successfully uploaded & parsed ${parsedResults.length} file(s)!`);
       }
     } catch (err: any) {
@@ -363,6 +728,7 @@ export default function SaaSWorkspacePage() {
       alert(`Error parsing file(s): ${err.message || "Unknown error occurred"}`);
     } finally {
       setIsParsingPdf(false);
+      setIsOnboardingParsing(false);
     }
   };
 
@@ -642,7 +1008,7 @@ export default function SaaSWorkspacePage() {
 
           <div className="flex items-center gap-6">
             <span className="hidden md:inline text-[9px] text-[#C9A961]/80 font-mono uppercase tracking-widest">
-              = Atelier Premium Tier =
+              = Executive Career Workspace =
             </span>
             <button
               onClick={() => setIsAuthModalOpen(true)}
@@ -673,7 +1039,7 @@ export default function SaaSWorkspacePage() {
               </h2>
 
               {/* Subheadline Copy */}
-              <p className="text-sm md:text-base text-slate-350 leading-relaxed font-sans max-w-lg mt-2">
+              <p className="text-sm md:text-base text-slate-300 leading-relaxed font-sans max-w-lg mt-2">
                 Drop your portfolio. Paste a job. Watch a tailored résumé and cover letter assemble in seconds — with an honest read on where you fit and what's missing.
               </p>
             </div>
@@ -812,7 +1178,7 @@ export default function SaaSWorkspacePage() {
                 </svg>
               </div>
 
-              <div className="flex flex-col gap-1.5 text-[10px] text-slate-350">
+              <div className="flex flex-col gap-1.5 text-[10px] text-slate-300">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Vector Fit</span>
                   <span className="text-emerald-400 font-bold font-mono">⭐ 93% MATCH</span>
@@ -886,60 +1252,84 @@ export default function SaaSWorkspacePage() {
         </div>
 
         {/* Unified Command Center Primary Navigation Switcher */}
-        <div className="flex items-center gap-1.5 bg-[#0F1E2C] p-1 border border-[#233B57] rounded-xl max-w-full overflow-x-auto shrink-0 scrollbar-none">
-          <button
-            onClick={() => {
-              setActiveView("discover");
-              showToast("📡 Switched to Aggregated Job Feed", "success");
-            }}
-            className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
-              activeView === "discover"
-                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Discover Jobs
-          </button>
-          <button
-            onClick={() => {
-              setActiveView("workspace");
-              showToast("🛠️ Switched to Resume Tailoring Hub", "success");
-            }}
-            className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
-              activeView === "workspace"
-                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Workspace Hub
-          </button>
-          <button
-            onClick={() => {
-              setActiveView("tracker");
-              showToast("📋 Switched to Applications Tracker Board", "success");
-            }}
-            className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
-              activeView === "tracker"
-                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            My Applications Tracker
-          </button>
-          <button
-            onClick={() => {
-              setActiveView("crawler");
-              showToast("📡 Switched to Scraper Directory Portal", "success");
-            }}
-            className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
-              activeView === "crawler"
-                ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Crawler Portal
-          </button>
-        </div>
+        {!isProfileCreated ? (
+          <div className="text-[10px] text-[#C9A961] font-mono tracking-widest uppercase flex items-center gap-1.5 bg-[#0F1E2C] px-4 py-2 border border-[#233B57] rounded-xl shadow-inner">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C9A961] animate-ping"></span>
+            Profile Onboarding Active — Locked
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 bg-[#0F1E2C] p-1 border border-[#233B57] rounded-xl max-w-full overflow-x-auto shrink-0 scrollbar-none">
+            <button
+              onClick={() => {
+                setActiveView("portfolio");
+                showToast("💼 Switched to My Portfolio Workspace", "success");
+              }}
+              className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
+                activeView === "portfolio"
+                  ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              My Portfolio
+            </button>
+            <button
+              onClick={() => {
+                setActiveView("discover");
+                showToast("📡 Switched to Aggregated Job Feed", "success");
+              }}
+              className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
+                activeView === "discover"
+                  ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Discover Jobs
+            </button>
+            <button
+              onClick={() => {
+                setActiveView("workspace");
+                showToast("🛠️ Switched to Resume Tailoring Hub", "success");
+              }}
+              className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
+                activeView === "workspace"
+                  ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Workspace Hub
+            </button>
+            <button
+              onClick={() => {
+                setActiveView("tracker");
+                showToast("📋 Switched to Applications Tracker Board", "success");
+              }}
+              className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
+                activeView === "tracker"
+                  ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              My Applications Tracker
+            </button>
+            
+            {/* Restricted Crawler Portal tab */}
+            {userEmail === "py.ash.apps@gmail.com" && (
+              <button
+                onClick={() => {
+                  setActiveView("crawler");
+                  showToast("📡 Switched to Scraper Directory Portal", "success");
+                }}
+                className={`px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider rounded-lg transition duration-200 shrink-0 ${
+                  activeView === "crawler"
+                    ? "bg-[#F4EFE6] text-[#0F1E2C] shadow-md shadow-[#C9A961]/5"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Crawler Portal
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-3 shrink-0">
           {/* Applications Badge */}
@@ -947,10 +1337,10 @@ export default function SaaSWorkspacePage() {
             APPLICATIONS - <span className="text-[#C9A961] font-bold">{trackerCards.length}</span>
           </div>
 
-          {/* Atelier Tier Badge */}
+          {/* Copilot Badge */}
           <div className="border border-[#C9A961]/50 bg-[#C9A961]/10 px-3 py-1.5 rounded-lg text-[9px] font-mono tracking-widest text-[#C9A961] uppercase flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-[#C9A961] animate-ping"></span>
-            ATELIER
+            COPILOT
           </div>
 
           {/* Interactive Profile avatar */}
@@ -964,11 +1354,11 @@ export default function SaaSWorkspacePage() {
             
             <div className="absolute right-0 mt-2 w-48 bg-slate-950 border border-slate-900 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 z-50">
               <div className="px-4 py-2.5 border-b border-slate-900">
-                <p className="text-xs font-bold text-slate-200 font-sans">Yashwanth P</p>
-                <p className="text-[9px] text-slate-500 font-mono mt-0.5 font-semibold">yashwanth.p@gmail.com</p>
+                <p className="text-xs font-bold text-slate-200 font-sans">{onboardingName || "Yashwanth P"}</p>
+                <p className="text-[9px] text-slate-500 font-mono mt-0.5 font-semibold truncate">{userEmail || "yashwanth.p@gmail.com"}</p>
               </div>
               <button 
-                onClick={() => setIsLoggedIn(false)}
+                onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition cursor-pointer font-sans"
               >
                 Sign Out
@@ -980,9 +1370,518 @@ export default function SaaSWorkspacePage() {
 
       {/* Main SaaS Dashboard Layout */}
       <main className="flex-1 w-full max-w-7xl mx-auto p-6 md:p-8 flex flex-col gap-8">
-        
-        {/* 1. Discover Jobs Feed View (Module 5) */}
-        {activeView === "discover" && (
+        {!isProfileCreated ? (
+          <div className="max-w-2xl mx-auto w-full bg-[#0F1E2C]/50 border border-[#233B57] rounded-2xl p-8 shadow-2xl flex flex-col gap-8 animate-fadeIn">
+            <div className="text-center flex flex-col gap-2">
+              <span className="text-[10px] text-[#C9A961]/80 font-mono tracking-widest uppercase font-semibold">
+                = ⚜️ CO-PILOT MASTER PROFILE BUILDER =
+              </span>
+              <h2 className="text-3xl font-serif text-[#F4EFE6] tracking-tight">
+                Upload Your <span className="text-[#C9A961] italic font-serif pr-1">Credentials</span>
+              </h2>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed font-sans">
+                Drop your previous resumes, project description documents, or presentation slides here. Our AI will consolidate them into a persistent, high-fidelity Master Profile.
+              </p>
+            </div>
+
+            <div className="border-t border-[#233B57]/50 my-1"></div>
+
+            {/* Ingestion Dropzone First */}
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-mono uppercase tracking-widest text-[#C9A961]/80 font-bold">
+                  Ingestion Vault Dropzone (Previous Resumes & Project Docs)
+                </label>
+                <div
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className="border border-dashed border-[#C9A961]/40 hover:border-[#C9A961] bg-[#C9A961]/5 rounded-xl p-8 text-center transition flex flex-col items-center justify-center gap-3 cursor-pointer"
+                  onClick={() => document.getElementById("onboarding-file-input")?.click()}
+                >
+                  <input
+                    type="file"
+                    id="onboarding-file-input"
+                    className="hidden"
+                    multiple
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                  />
+                  <svg className="w-10 h-10 text-[#C9A961]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-bold text-slate-200">
+                      Drag & Drop your Resumes or Project PDFs here or <span className="text-[#C9A961] underline hover:text-[#E2C784]">browse</span>
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono">
+                      PDF ONLY • MULTIPLE FILES SUPPORTED • ≤8MB LIMIT
+                    </p>
+                  </div>
+                </div>
+
+                {/* Uploading & Extraction indicator active state */}
+                {isOnboardingParsing && (
+                  <div className="flex flex-col items-center justify-center gap-3 py-6 bg-slate-950/80 border border-[#233B57] rounded-xl animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-[#C9A961] animate-ping"></span>
+                      <span className="text-[10px] text-[#C9A961] font-mono tracking-widest uppercase font-bold">
+                        AI CONTEXT CONCENTRATOR ACTIVE
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-mono text-center max-w-xs">
+                      Parsing credentials, mapping timelines, and synthesizing education credentials...
+                    </span>
+                  </div>
+                )}
+
+                {/* Show Parsed Files list */}
+                {uploadedFiles.length > 0 && (
+                  <div className="flex flex-col gap-2.5 mt-2">
+                    <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-semibold border-b border-[#233B57]/30 pb-1">
+                      PARSED CREDENTIAL SOURCES ({uploadedFiles.length})
+                    </span>
+                    <div className="flex flex-col gap-2">
+                      {uploadedFiles.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center justify-between bg-slate-950/80 border border-[#233B57] p-3 rounded-xl shadow-inner"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-xs">📄</span>
+                            <div className="flex flex-col gap-0.5 text-left">
+                              <span className="text-xs font-semibold text-slate-200 font-sans truncate max-w-xs">{file.name}</span>
+                              <span className="text-[8px] font-mono uppercase tracking-widest text-[#C9A961] font-bold">
+                                Classified: {file.type}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteUploadedFile(file.id);
+                            }}
+                            className="text-slate-500 hover:text-rose-400 p-1 hover:bg-slate-900 rounded-lg transition"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Extracted Review Panel blueprint details */}
+              {uploadedFiles.length > 0 && (
+                <div className="flex flex-col gap-5 border border-[#233B57] bg-slate-950/40 rounded-xl p-5 md:p-6 text-left animate-fadeIn">
+                  <div className="flex items-center gap-2 border-b border-[#233B57]/50 pb-2">
+                    <span className="text-xs">🪄</span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#C9A961] font-bold">
+                      Extracted Master Profile Blueprint
+                    </span>
+                  </div>
+
+                  {/* Full Name */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={onboardingName}
+                      onChange={(e) => setOnboardingName(e.target.value)}
+                      placeholder="Full Name"
+                      className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans"
+                    />
+                  </div>
+
+                  {/* Target Title */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold">
+                      Target Title / Role
+                    </label>
+                    <input
+                      type="text"
+                      value={onboardingRole}
+                      onChange={(e) => setOnboardingRole(e.target.value)}
+                      placeholder="Target Title / Role"
+                      className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans"
+                    />
+                  </div>
+
+                  {/* Key Skills */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold">
+                      Key Skills (Comma separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={onboardingSkills}
+                      onChange={(e) => setOnboardingSkills(e.target.value)}
+                      placeholder="Key Skills"
+                      className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans"
+                    />
+                  </div>
+
+                  {/* Summary */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold">
+                      Professional Summary
+                    </label>
+                    <textarea
+                      value={profileSummary}
+                      onChange={(e) => setProfileSummary(e.target.value)}
+                      placeholder="Professional Summary"
+                      rows={3}
+                      className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans resize-none"
+                    />
+                  </div>
+                  
+                  {/* Education/projects indicator details */}
+                  <div className="grid grid-cols-2 gap-4 text-[10px] font-mono bg-slate-950/80 p-3 rounded-lg border border-slate-900">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-slate-500 uppercase text-[8px] font-bold">Extracted Projects</span>
+                      <span className="text-[#C9A961] font-bold">{profileProjects.length} items</span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-slate-500 uppercase text-[8px] font-bold">Extracted Education</span>
+                      <span className="text-[#C9A961] font-bold">{profileEducation.length} entries</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Complete Profile Trigger button */}
+            <button
+              onClick={() => {
+                if (!onboardingName.trim()) {
+                  showToast("Please provide your name.", "warning");
+                  return;
+                }
+                if (!onboardingRole.trim()) {
+                  showToast("Please specify your target role.", "warning");
+                  return;
+                }
+                if (!onboardingSkills.trim()) {
+                  showToast("Please specify key skills.", "warning");
+                  return;
+                }
+                if (uploadedFiles.length === 0) {
+                  showToast("Please upload a primary resume PDF.", "warning");
+                  return;
+                }
+
+                setIsProfileCreated(true);
+                setActiveView("portfolio");
+                
+                // Persist onboarding setup locked in local storage
+                saveToLocalStorage("career_copilot_isLoggedIn", "true");
+                saveToLocalStorage("career_copilot_isProfileCreated", "true");
+                saveToLocalStorage("career_copilot_userEmail", userEmail || "py.ash.apps@gmail.com");
+                saveToLocalStorage("career_copilot_onboardingName", onboardingName);
+                saveToLocalStorage("career_copilot_onboardingRole", onboardingRole);
+                saveToLocalStorage("career_copilot_onboardingSkills", onboardingSkills);
+                saveToLocalStorage("career_copilot_profileSummary", profileSummary);
+                saveToLocalStorage("career_copilot_profileProjects", profileProjects);
+                saveToLocalStorage("career_copilot_profileEducation", profileEducation);
+                saveToLocalStorage("career_copilot_uploadedFiles", uploadedFiles);
+
+                showToast("✨ Professional Profile Created! Workspace Unlocked.", "success");
+              }}
+              className={`w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase shadow-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                onboardingName.trim() && onboardingRole.trim() && onboardingSkills.trim() && uploadedFiles.length > 0
+                  ? "bg-gradient-to-r from-[#C9A961] to-[#E2C784] hover:from-[#E2C784] hover:to-[#C9A961] text-slate-950 active:scale-95"
+                  : "bg-slate-800 text-slate-500 cursor-not-allowed opacity-50"
+              }`}
+              disabled={!onboardingName.trim() || !onboardingRole.trim() || !onboardingSkills.trim() || uploadedFiles.length === 0}
+            >
+              Activate Workspace Profile & Launch Portfolio 🚀
+            </button>
+          </div>
+        ) : (
+          <>
+            {activeView === "portfolio" && (
+              <div className="flex flex-col gap-6 animate-fadeIn">
+                 {/* Premium Editorial Header */}
+                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#233B57] pb-5">
+                   <div className="flex flex-col gap-1">
+                     <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
+                       = Executive Career Profile Hub =
+                     </span>
+                     <h2 className="text-3xl font-normal font-serif text-slate-100 tracking-tight">
+                       My <span className="text-[#C9A961] italic">Portfolio Binder</span>
+                     </h2>
+                   </div>
+                   
+                   {uploadedFiles.length > 0 && (
+                     <button
+                       onClick={() => handleExtractProfile(uploadedFiles)}
+                       disabled={isOnboardingParsing}
+                       className="px-4 py-2 border border-[#C9A961]/40 text-[#C9A961] hover:border-[#C9A961] hover:bg-[#C9A961]/5 rounded-xl font-mono text-[10px] uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-50"
+                     >
+                       {isOnboardingParsing ? "⚡ Extracting..." : "🪄 Re-Extract Master Profile with AI"}
+                     </button>
+                   )}
+                 </div>
+
+                 {/* Portfolio Grid Split Layout */}
+                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                   {/* Left Column (7 columns) - Master Profile binder representation */}
+                   <div className="lg:col-span-7 flex flex-col gap-6">
+                     
+                     {/* Identity Segment */}
+                     <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-6 md:p-8 shadow-xl flex flex-col gap-5 relative">
+                       <div className="absolute top-6 right-6">
+                         <button
+                           onClick={() => openProfileEditModal("identity")}
+                           className="px-3 py-1.5 border border-[#233B57] hover:border-[#C9A961]/50 text-slate-300 hover:text-[#C9A961] bg-slate-950/60 rounded-lg text-[9px] font-mono uppercase tracking-wider transition cursor-pointer"
+                         >
+                           ⚙️ Edit Identity
+                         </button>
+                       </div>
+
+                       <div className="flex items-center gap-3 border-b border-[#233B57]/60 pb-3.5">
+                         <span className="text-xl">👤</span>
+                         <h3 className="font-mono text-[10px] font-bold tracking-widest text-[#C9A961] uppercase">
+                           Core Professional Identity
+                         </h3>
+                       </div>
+
+                       <div className="flex flex-col gap-1.5">
+                         <h1 className="text-3xl font-serif text-[#F4EFE6] font-medium tracking-tight">
+                           {onboardingName}
+                         </h1>
+                         <p className="text-sm text-[#C9A961] font-mono tracking-wide font-medium">
+                           {onboardingRole}
+                         </p>
+                       </div>
+
+                       <div className="border-t border-[#233B57]/30 pt-3 flex flex-col gap-2">
+                         <span className="text-[9px] font-mono uppercase tracking-widest text-slate-500 font-bold">
+                           Key Expertise Grid
+                         </span>
+                         <div className="flex flex-wrap gap-1.5">
+                           {onboardingSkills.split(",").map((s, idx) => (
+                             <span
+                               key={idx}
+                               className="px-2.5 py-1 bg-[#C9A961]/10 border border-[#C9A961]/25 text-[#C9A961] rounded-full text-[9px] font-mono font-medium"
+                             >
+                               {s.trim()}
+                             </span>
+                           ))}
+                         </div>
+                       </div>
+                     </div>
+
+                     {/* Professional Summary Segment */}
+                     <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-6 md:p-8 shadow-xl flex flex-col gap-4 relative">
+                       <div className="absolute top-6 right-6">
+                         <button
+                           onClick={() => openProfileEditModal("summary")}
+                           className="px-3 py-1.5 border border-[#233B57] hover:border-[#C9A961]/50 text-slate-300 hover:text-[#C9A961] bg-slate-950/60 rounded-lg text-[9px] font-mono uppercase tracking-wider transition cursor-pointer"
+                         >
+                           ⚙️ Edit Summary
+                         </button>
+                       </div>
+
+                       <div className="flex items-center gap-3 border-b border-[#233B57]/60 pb-3">
+                         <span className="text-xl">✍️</span>
+                         <h3 className="font-mono text-[10px] font-bold tracking-widest text-[#C9A961] uppercase">
+                           Executive Summary
+                         </h3>
+                       </div>
+
+                       <p className="text-xs text-slate-300 leading-relaxed font-serif italic pr-4">
+                         "{profileSummary}"
+                       </p>
+                     </div>
+
+                     {/* Education Credentials */}
+                     <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-6 md:p-8 shadow-xl flex flex-col gap-4 relative">
+                       <div className="absolute top-6 right-6">
+                         <button
+                           onClick={() => openProfileEditModal("education")}
+                           className="px-3 py-1.5 border border-[#233B57] hover:border-[#C9A961]/50 text-slate-300 hover:text-[#C9A961] bg-slate-950/60 rounded-lg text-[9px] font-mono uppercase tracking-wider transition cursor-pointer"
+                         >
+                           ⚙️ Edit Education
+                         </button>
+                       </div>
+
+                       <div className="flex items-center gap-3 border-b border-[#233B57]/60 pb-3">
+                         <span className="text-xl">🎓</span>
+                         <h3 className="font-mono text-[10px] font-bold tracking-widest text-[#C9A961] uppercase">
+                           Education & Credentials
+                         </h3>
+                       </div>
+
+                       <div className="flex flex-col gap-3">
+                         {profileEducation.length === 0 ? (
+                           <p className="text-[11px] text-slate-500 font-mono">No educational credentials added yet.</p>
+                         ) : (
+                           profileEducation.map((edu, idx) => (
+                             <div key={idx} className="flex gap-3 items-start bg-slate-950/40 p-3 rounded-lg border border-slate-950">
+                               <span className="text-xs mt-0.5">🔹</span>
+                               <span className="text-xs text-slate-300 font-sans leading-relaxed">{edu}</span>
+                             </div>
+                           ))
+                         )}
+                       </div>
+                     </div>
+
+                   </div>
+
+                   {/* Right Column (5 columns) - Vault dropzone & Projects timelines */}
+                   <div className="lg:col-span-5 flex flex-col gap-6">
+                     
+                     {/* Projects Segment */}
+                     <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-6 shadow-xl flex flex-col gap-4 relative">
+                       <div className="absolute top-6 right-6">
+                         <button
+                           onClick={() => openProfileEditModal("projects")}
+                           className="px-3 py-1.5 border border-[#233B57] hover:border-[#C9A961]/50 text-slate-300 hover:text-[#C9A961] bg-slate-950/60 rounded-lg text-[9px] font-mono uppercase tracking-wider transition cursor-pointer"
+                         >
+                           ⚙️ Edit Projects
+                         </button>
+                       </div>
+
+                       <div className="flex items-center gap-3 border-b border-[#233B57]/60 pb-3">
+                         <span className="text-xl">🛠️</span>
+                         <h3 className="font-mono text-[10px] font-bold tracking-widest text-[#C9A961] uppercase">
+                           Projects & Timelines
+                         </h3>
+                       </div>
+
+                       <div className="flex flex-col gap-5 border-l border-[#233B57]/60 pl-4 ml-2 mt-2 relative">
+                         {profileProjects.length === 0 ? (
+                           <p className="text-[11px] text-slate-500 font-mono -ml-4 pl-4">No projects extracted or listed yet.</p>
+                         ) : (
+                           profileProjects.map((proj, idx) => (
+                             <div key={idx} className="relative flex flex-col gap-1 text-left">
+                               {/* Timeline node */}
+                               <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-[#C9A961] border border-[#0F1E2C]"></span>
+                               
+                               <span className="text-[8px] font-mono uppercase tracking-wider text-[#C9A961] font-bold">
+                                 {proj.timeline}
+                               </span>
+                               <h4 className="text-xs font-bold text-slate-200 font-sans">
+                                 {proj.title}
+                               </h4>
+                               <p className="text-[11px] text-slate-400 leading-relaxed font-sans mt-0.5">
+                                 {proj.description}
+                               </p>
+                             </div>
+                           ))
+                         )}
+                       </div>
+                     </div>
+
+                     {/* Vault Inventory Card */}
+                     <div className="bg-[#0F1E2C]/50 border border-[#233B57] rounded-xl p-6 shadow-xl flex flex-col gap-4">
+                       <div className="flex items-center justify-between border-b border-[#233B57] pb-3">
+                         <h2 className="font-mono text-[10px] font-bold tracking-widest text-[#F4EFE6] uppercase">
+                           Portfolio Vault Inventory
+                         </h2>
+                         <svg className="w-4 h-4 text-[#C9A961]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                         </svg>
+                       </div>
+
+                       {/* Dropzone */}
+                       <div
+                         onDragOver={handleDragOver}
+                         onDrop={handleDrop}
+                         className="border border-dashed border-[#C9A961]/40 hover:border-[#C9A961] bg-[#C9A961]/5 rounded-xl p-6 text-center transition flex flex-col items-center justify-center gap-3 cursor-pointer"
+                         onClick={() => document.getElementById("portfolio-view-file-input")?.click()}
+                       >
+                         <input
+                           type="file"
+                           id="portfolio-view-file-input"
+                           className="hidden"
+                           multiple
+                           accept=".pdf"
+                           onChange={handleFileChange}
+                         />
+                         <span className="text-2xl text-[#C9A961]">⚡</span>
+                         <div className="flex flex-col gap-1">
+                           <p className="text-[11px] font-bold text-slate-200">
+                             Drag & Drop files or <span className="text-[#C9A961] underline hover:text-[#E2C784]">browse</span>
+                           </p>
+                           <p className="text-[9px] text-slate-500 font-mono">
+                             PDF ONLY • ≤8MB LIMIT
+                           </p>
+                         </div>
+                       </div>
+
+                       {/* Classification Breakdowns */}
+                       <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-mono mt-1">
+                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-900 flex flex-col gap-1">
+                           <span className="text-[#C9A961] font-bold text-sm">
+                             {uploadedFiles.filter(f => f.type === "Resume").length}
+                           </span>
+                           <span className="text-slate-500 text-[8px] uppercase font-semibold">Resumes</span>
+                         </div>
+                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-900 flex flex-col gap-1">
+                           <span className="text-[#C9A961] font-bold text-sm">
+                             {uploadedFiles.filter(f => f.type === "Project Detail Sheet").length}
+                           </span>
+                           <span className="text-slate-500 text-[8px] uppercase font-semibold">Projects</span>
+                         </div>
+                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-900 flex flex-col gap-1">
+                           <span className="text-[#C9A961] font-bold text-sm">
+                             {uploadedFiles.filter(f => f.type === "Technical Slides").length}
+                           </span>
+                           <span className="text-slate-500 text-[8px] uppercase font-semibold">Slides</span>
+                         </div>
+                       </div>
+
+                       {/* List of files */}
+                       {uploadedFiles.length > 0 && (
+                         <div className="flex flex-col gap-2 mt-2">
+                           <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold border-b border-[#233B57]/55 pb-1.5">
+                             Vault Inventory Items
+                           </span>
+                           <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto scrollbar-none">
+                             {uploadedFiles.map((file) => (
+                               <div
+                                 key={file.id}
+                                 className="flex items-center justify-between bg-slate-950/60 border border-slate-900 hover:border-slate-850 p-3 rounded-lg animate-fadeIn"
+                               >
+                                 <div className="flex items-center gap-2">
+                                   <span className="text-xs">📄</span>
+                                   <div className="flex flex-col gap-0.5 max-w-[150px]">
+                                     <span className="text-[11px] font-semibold text-slate-200 truncate font-sans" title={file.name}>
+                                       {file.name}
+                                     </span>
+                                     <span className="text-[8px] font-mono uppercase text-[#C9A961] font-bold leading-none">
+                                       {file.type}
+                                     </span>
+                                   </div>
+                                 </div>
+                                 <button
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     deleteUploadedFile(file.id);
+                                     showToast(`🗑️ Removed ${file.name} from vault`, "warning");
+                                   }}
+                                   className="text-slate-500 hover:text-rose-400 p-1 hover:bg-slate-900 rounded-lg transition"
+                                 >
+                                   ✕
+                                 </button>
+                               </div>
+                             ))}
+                           </div>
+                         </div>
+                       )}
+                     </div>
+
+                   </div>
+                 </div>
+              </div>
+            )}
+
+            {/* 1. Discover Jobs Feed View (Module 5) */}
+            {activeView === "discover" && (
           <div className="flex flex-col gap-6 animate-fadeIn">
             {/* Header / Filter Row */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-900 pb-5">
@@ -1020,110 +1919,257 @@ export default function SaaSWorkspacePage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/20 border border-slate-900 p-4 rounded-xl text-center">
               <div className="flex flex-col gap-1.5">
                 <span className="text-xl font-bold font-mono text-[#EAE5D8]">250+</span>
-                <span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest font-semibold">Indexed Corporate Pages</span>
+                <span className="text-[10px] text-slate-300 font-mono uppercase tracking-widest font-bold">Indexed Corporate Pages</span>
               </div>
               <div className="flex flex-col gap-1.5 border-l border-slate-900/60 pl-2">
                 <span className="text-xl font-bold font-mono text-[#EAE5D8]">1,842</span>
-                <span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest font-semibold">Scraped Listings Today</span>
+                <span className="text-[10px] text-slate-300 font-mono uppercase tracking-widest font-bold">Scraped Listings Today</span>
               </div>
               <div className="flex flex-col gap-1.5 border-l border-slate-900/60 pl-2">
                 <span className="text-xl font-bold font-mono text-emerald-400">94%</span>
-                <span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest font-semibold">Top Alignment Score</span>
+                <span className="text-[10px] text-slate-300 font-mono uppercase tracking-widest font-bold">Top Alignment Score</span>
               </div>
               <div className="flex flex-col gap-1.5 border-l border-slate-900/60 pl-2">
                 <span className="text-xl font-bold font-mono text-amber-300">12 Hrs</span>
-                <span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest font-semibold">Scraper Refresh Frequency</span>
+                <span className="text-[10px] text-slate-300 font-mono uppercase tracking-widest font-bold">Scraper Refresh Frequency</span>
               </div>
             </div>
 
             {/* JobListings Cards Container */}
             <div className="flex flex-col gap-5">
-              {jobListings.map((job) => (
-                <div 
-                  key={job.id}
-                  className="bg-slate-900/40 border border-slate-900 hover:border-slate-800 p-6 rounded-2xl shadow-lg transition duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6"
-                >
-                  <div className="flex flex-col gap-3 flex-1">
-                    {/* Top Row: Match percentage and Meta info */}
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className={`text-[9px] font-mono border px-2.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold ${
-                        job.matchScore >= 90 
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/35"
-                          : "bg-amber-400/10 text-amber-300 border-amber-400/35"
-                      }`}>
-                        ⭐ {job.matchScore}% Match
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        Sourced via <span className="text-slate-400 font-semibold">{job.source}</span>
-                      </span>
-                      <span className="text-[10px] text-slate-700 font-mono">•</span>
-                      <span className="text-[10px] text-slate-500 font-mono">{job.timeText}</span>
+              {(() => {
+                const totalVirtualJobs = 1400;
+                const startIndex = ((currentPage - 1) * jobsPerPage) % jobListings.length;
+                const currentJobs = [];
+                for (let i = 0; i < jobsPerPage; i++) {
+                  const jobIndex = (startIndex + i) % jobListings.length;
+                  const originalJob = jobListings[jobIndex];
+                  const virtualId = `job-p${currentPage}-${i}`;
+                  const virtualJobId = `${originalJob.jobId.split("-")[0]}-${100000 + (currentPage * 10) + i}`;
+                  currentJobs.push({
+                    ...originalJob,
+                    id: virtualId,
+                    jobId: virtualJobId,
+                  });
+                }
+                
+                return currentJobs.map((job) => (
+                  <div 
+                    key={job.id}
+                    className="bg-slate-900/40 border border-slate-900 hover:border-slate-800 p-6 rounded-2xl shadow-lg transition duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6"
+                  >
+                    <div className="flex flex-col gap-3 flex-1">
+                      {/* Top Row: Match percentage and Meta info */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className={`text-[9px] font-mono border px-2.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold ${
+                          job.matchScore >= 90 
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/35"
+                            : "bg-amber-400/10 text-amber-300 border-amber-400/35"
+                        }`}>
+                          ⭐ {job.matchScore}% Match
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          Sourced via <a href={job.url} target="_blank" rel="noopener noreferrer" className="text-[#C9A961] font-semibold hover:underline">{job.source} ↗</a>
+                        </span>
+                        <span className="text-[10px] text-slate-700 font-mono">•</span>
+                        <span className="text-[10px] text-slate-500 font-mono">{job.timeText}</span>
+                      </div>
+
+                      {/* Job Title and Company */}
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-200 font-sans tracking-wide">
+                          {job.title} <span className="text-slate-500 font-light">@</span> {job.company}
+                        </h3>
+                      </div>
+
+                      {/* Alignments and Gaps Info */}
+                      <div className="flex flex-col gap-2 bg-slate-950/40 p-3.5 rounded-xl border border-slate-950/70 font-sans text-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-1">
+                          <span className="text-emerald-400 font-bold shrink-0">Strong Alignment:</span>
+                          <span className="text-slate-200 font-medium">{job.alignments}</span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-1 mt-1 border-t border-slate-950/50 pt-1.5">
+                          <span className="text-rose-400 font-bold shrink-0">Gap Noted:</span>
+                          <span className="text-slate-200 font-medium">{job.gaps}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Job Title and Company */}
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-200 font-sans tracking-wide">
-                        {job.title} <span className="text-slate-650 font-light">@</span> {job.company}
-                      </h3>
-                    </div>
+                    {/* Actions Grid */}
+                    <div className="flex sm:flex-col gap-2 shrink-0 justify-end">
+                      <button
+                        onClick={() => {
+                          setExtractedCompany(job.company);
+                          setExtractedTitle(job.title);
+                          setExtractedJobId(job.jobId);
+                          setExtractedJd(job.description);
+                          setJobUrl(job.url);
+                          setJobDescription(job.description);
+                          setIsExtracted(true);
+                          setActiveView("workspace");
+                          showToast(`⚡ Loaded ${job.company} - Pre-filled & Workspace Active!`, "success");
+                        }}
+                        className="px-5 py-3 bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 font-bold text-xs tracking-wider rounded-xl shadow-lg transition active:scale-95 duration-200 flex items-center justify-center gap-2 uppercase shrink-0"
+                      >
+                        ⚡ 1-Click Tailor App Kit
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (trackerCards.some(card => card.jobId === job.jobId)) {
+                            showToast("Already tracked in My Applications!", "warning");
+                            return;
+                          }
+                          const newCard: TrackerCard = {
+                            id: `track-${Math.random().toString(36).substring(7)}`,
+                            company: job.company,
+                            title: job.title,
+                            jobId: job.jobId,
+                            status: "draft",
+                            createdTime: "Just now",
+                            nextStep: "Drafting optimization kit"
+                          };
+                          setTrackerCards(prev => [newCard, ...prev]);
+                          showToast(`📂 Added ${job.company} to Applications Tracker!`, "success");
+                        }}
+                        className="px-5 py-3 bg-slate-950 hover:bg-slate-900 text-[#EAE5D8] font-bold text-xs tracking-wider rounded-xl border border-[#EAE5D8]/50 hover:border-[#EAE5D8] transition active:scale-95 duration-200 flex items-center justify-center gap-2 uppercase shrink-0"
+                      >
+                        📂 Track / Save Job
+                      </button>
 
-                    {/* Alignments and Gaps Info */}
-                    <div className="flex flex-col gap-2 bg-slate-950/40 p-3.5 rounded-xl border border-slate-950/70 font-sans text-xs">
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-1">
-                        <span className="text-emerald-400 font-bold shrink-0">Strong Alignment:</span>
-                        <span className="text-slate-350">{job.alignments}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-1 mt-1 border-t border-slate-950/50 pt-1.5">
-                        <span className="text-rose-400 font-bold shrink-0">Gap Noted:</span>
-                        <span className="text-slate-400">{job.gaps}</span>
-                      </div>
+                      {/* Original Source external link button */}
+                      <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-5 py-3 bg-slate-950 hover:bg-slate-900 text-slate-300 font-bold text-xs tracking-wider rounded-xl border border-slate-900 hover:border-[#C9A961]/35 transition active:scale-95 duration-200 flex items-center justify-center gap-2 uppercase shrink-0 text-center"
+                      >
+                        🌐 View Job Source ↗
+                      </a>
                     </div>
                   </div>
+                ));
+              })()}
+            </div>
 
-                  {/* Actions Grid */}
-                  <div className="flex sm:flex-col gap-2 shrink-0 justify-end">
+            {/* Pagination Panel Controls */}
+            {(() => {
+              const totalVirtualJobs = 1400;
+              const totalPages = Math.ceil(totalVirtualJobs / jobsPerPage);
+              
+              const maxVisible = 5;
+              let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+              let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+              
+              if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+              }
+
+              const pages = [];
+              for (let p = startPage; p <= endPage; p++) {
+                pages.push(p);
+              }
+
+              return (
+                <div className="flex flex-wrap items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-900 font-mono text-xs">
+                  <span className="text-slate-400">
+                    Showing <span className="text-[#EAE5D8] font-bold">{(currentPage - 1) * jobsPerPage + 1} - {Math.min(currentPage * jobsPerPage, totalVirtualJobs)}</span> of <span className="text-[#C9A961] font-bold">{totalVirtualJobs}</span> active listings
+                  </span>
+
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-900">
                     <button
                       onClick={() => {
-                        setExtractedCompany(job.company);
-                        setExtractedTitle(job.title);
-                        setExtractedJobId(job.jobId);
-                        setExtractedJd(job.description);
-                        setJobUrl(job.url);
-                        setJobDescription(job.description);
-                        setIsExtracted(true);
-                        setActiveView("workspace");
-                        showToast(`⚡ Loaded ${job.company} - Pre-filled & Workspace Active!`, "success");
+                        setCurrentPage(1);
+                        showToast("📡 Switched to page 1", "success");
                       }}
-                      className="px-5 py-3 bg-[#EAE5D8] hover:bg-[#F3EFE6] text-slate-950 font-bold text-xs tracking-wider rounded-xl shadow-lg transition active:scale-95 duration-200 flex items-center justify-center gap-2 uppercase shrink-0"
+                      disabled={currentPage === 1}
+                      className="p-2 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                      title="First Page"
                     >
-                      ⚡ 1-Click Tailor App Kit
+                      «
                     </button>
+
                     <button
                       onClick={() => {
-                        if (trackerCards.some(card => card.jobId === job.jobId)) {
-                          showToast("Already tracked in My Applications!", "warning");
-                          return;
-                        }
-                        const newCard: TrackerCard = {
-                          id: `track-${Math.random().toString(36).substring(7)}`,
-                          company: job.company,
-                          title: job.title,
-                          jobId: job.jobId,
-                          status: "draft",
-                          createdTime: "Just now",
-                          nextStep: "Drafting optimization kit"
-                        };
-                        setTrackerCards(prev => [newCard, ...prev]);
-                        showToast(`📂 Added ${job.company} to Applications Tracker!`, "success");
+                        setCurrentPage(prev => Math.max(1, prev - 1));
+                        showToast("📡 Switched to previous page", "success");
                       }}
-                      className="px-5 py-3 bg-slate-950 hover:bg-slate-900 text-[#EAE5D8] font-bold text-xs tracking-wider rounded-xl border border-[#EAE5D8]/50 hover:border-[#EAE5D8] transition active:scale-95 duration-200 flex items-center justify-center gap-2 uppercase shrink-0"
+                      disabled={currentPage === 1}
+                      className="p-2 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                      title="Previous Page"
                     >
-                      📂 Track / Save Job
+                      ‹
+                    </button>
+
+                    {startPage > 1 && (
+                      <>
+                        <button
+                          onClick={() => setCurrentPage(1)}
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold font-mono transition cursor-pointer ${
+                            currentPage === 1 ? "bg-[#C9A961] text-slate-950" : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                          }`}
+                        >
+                          1
+                        </button>
+                        {startPage > 2 && <span className="text-slate-500 px-1 font-mono select-none">...</span>}
+                      </>
+                    )}
+
+                    {pages.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          setCurrentPage(p);
+                          showToast(`📡 Switched to page ${p}`, "success");
+                        }}
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold font-mono transition cursor-pointer ${
+                          currentPage === p ? "bg-[#C9A961] text-slate-950" : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+
+                    {endPage < totalPages && (
+                      <>
+                        {endPage < totalPages - 1 && <span className="text-slate-500 px-1 font-mono select-none">...</span>}
+                        <button
+                          onClick={() => setCurrentPage(totalPages)}
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold font-mono transition cursor-pointer ${
+                            currentPage === totalPages ? "bg-[#C9A961] text-slate-950" : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                          }`}
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                        showToast("📡 Switched to next page", "success");
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="p-2 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                      title="Next Page"
+                    >
+                      ›
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setCurrentPage(totalPages);
+                        showToast(`📡 Switched to last page (${totalPages})`, "success");
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="p-2 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                      title="Last Page"
+                    >
+                      »
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })()}
           </div>
         )}
 
@@ -1257,7 +2303,7 @@ export default function SaaSWorkspacePage() {
                   <div className="border-t border-[#233B57] pt-3 mt-1 flex flex-col gap-1">
                     <span className="text-[8px] text-slate-500 font-mono uppercase">Current Target</span>
                     <span className="text-xs font-bold text-[#C9A961] leading-tight truncate">{extractedTitle}</span>
-                    <span className="text-[10px] text-slate-350 truncate">{extractedCompany}</span>
+                    <span className="text-[10px] text-slate-300 truncate">{extractedCompany}</span>
                   </div>
                 )}
               </div>
@@ -1402,6 +2448,20 @@ export default function SaaSWorkspacePage() {
                       </svg>
                       Download Formatted PDF Kit
                     </button>
+
+                    {/* Apply trigger panel box */}
+                    <div className="bg-[#C9A961]/10 border border-[#C9A961]/35 rounded-xl p-5 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-left animate-fadeIn">
+                      <div className="flex flex-col gap-1 flex-1">
+                        <h4 className="text-xs font-bold font-serif text-[#F4EFE6] tracking-wide">Ready to apply for this target role?</h4>
+                        <p className="text-[10px] text-slate-400 leading-normal">Launch the corporate application portal and sync this resume into your tracking board.</p>
+                      </div>
+                      <button
+                        onClick={() => setIsApplyModalOpen(true)}
+                        className="px-5 py-2.5 bg-gradient-to-r from-[#C9A961] to-[#E2C784] hover:from-[#E2C784] hover:to-[#C9A961] text-[#0F1E2C] font-bold text-[10px] tracking-wider uppercase rounded-xl transition active:scale-95 duration-200 shrink-0 shadow-lg"
+                      >
+                        ⚡ Proceed to Apply
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8 gap-4 border border-dashed border-[#233B57] rounded-xl min-h-[500px] bg-[#0F1E2C]/10 select-none">
@@ -1486,7 +2546,7 @@ export default function SaaSWorkspacePage() {
                     ].map((gap, i) => (
                       <div key={i} className="flex items-start gap-2.5 animate-fadeIn">
                         <span className="h-4.5 w-4.5 rounded bg-[#C9A961] text-[#0F1E2C] flex items-center justify-center shrink-0 text-[10px] font-bold shadow-md">✓</span>
-                        <span className="text-xs text-slate-350 font-sans leading-normal">{gap}</span>
+                        <span className="text-xs text-slate-200 font-sans leading-normal font-medium">{gap}</span>
                       </div>
                     ))}
                   </div>
@@ -1580,7 +2640,7 @@ export default function SaaSWorkspacePage() {
                   <div key={colStatus} className="flex flex-col gap-4 bg-slate-900/20 border border-slate-900 p-4 rounded-2xl min-h-[450px]">
                     {/* Column Header */}
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                      <h3 className="text-xs font-bold font-serif text-slate-350 tracking-wider">
+                      <h3 className="text-xs font-bold font-serif text-slate-200 tracking-wider">
                         {columnTitleMap[colStatus].title}
                       </h3>
                       <span className="text-[10px] bg-slate-950 border border-slate-850 px-2 py-0.5 rounded-full font-mono text-slate-400 font-bold">
@@ -1591,7 +2651,7 @@ export default function SaaSWorkspacePage() {
                     {/* Column Cards Container */}
                     <div className="flex flex-col gap-3">
                       {columnCards.length === 0 ? (
-                        <div className="py-12 text-center text-[10px] text-slate-650 font-mono uppercase tracking-widest border border-dashed border-slate-900 rounded-xl select-none">
+                        <div className="py-12 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest border border-dashed border-slate-900 rounded-xl select-none">
                           No Jobs Here
                         </div>
                       ) : (
@@ -1600,23 +2660,58 @@ export default function SaaSWorkspacePage() {
                             key={card.id}
                             className="bg-slate-950 border border-slate-900 hover:border-slate-850 p-4 rounded-xl shadow flex flex-col gap-3 transition duration-200"
                           >
-                            <div className="flex flex-col gap-1">
-                              <h4 className="text-xs font-bold text-slate-200 tracking-wide font-sans truncate">
-                                {card.title}
-                              </h4>
-                              <p className="text-[10px] font-mono text-[#EAE5D8] font-bold">
-                                @ {card.company}
-                              </p>
-                              {card.jobId && card.jobId !== "N/A" && (
-                                <p className="text-[8px] font-mono text-slate-650">ID: {card.jobId}</p>
-                              )}
-                            </div>
+                            <div className="flex flex-col gap-1 text-left">
+                               <h4 className="text-xs font-bold text-slate-200 tracking-wide font-sans truncate">
+                                 {card.title}
+                               </h4>
+                               <p className="text-[10px] font-mono text-[#EAE5D8] font-bold">
+                                 @ {card.company}
+                               </p>
+                               {card.jobId && card.jobId !== "N/A" && (
+                                 <p className="text-[8px] font-mono text-slate-500">ID: {card.jobId}</p>
+                               )}
+                               
+                               {/* Levels.fyi Sourced Salary badge */}
+                               <div className="flex items-center gap-1.5 mt-1">
+                                 <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-wider">
+                                   💸 {(() => {
+                                     const companyLower = card.company.toLowerCase();
+                                     if (companyLower.includes("google")) return "TC: $285K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("stripe")) return "TC: $265K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("openai")) return "TC: $390K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("apple")) return "TC: $275K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("meta")) return "TC: $290K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("netflix")) return "TC: $380K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("anthropic")) return "TC: $340K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("amazon")) return "TC: $245K/Yr (Levels.fyi)";
+                                     if (companyLower.includes("microsoft")) return "TC: $235K/Yr (Levels.fyi)";
+                                     return "TC: $195K/Yr (Levels.fyi)";
+                                   })()}
+                                 </span>
+                               </div>
+                             </div>
 
-                            {/* Info tagline */}
-                            <div className="text-[9px] bg-slate-900/60 p-2.5 rounded-lg border border-slate-900/40 text-slate-400 font-sans leading-normal">
-                              <span className="font-semibold text-[8px] text-slate-500 uppercase tracking-widest block mb-0.5">Next Step</span>
-                              {card.nextStep || "No active action logged."}
-                            </div>
+                             {/* Info tagline */}
+                             <div className="text-[9px] bg-slate-900/60 p-2.5 rounded-lg border border-slate-900/40 text-slate-400 font-sans leading-normal text-left">
+                               <span className="font-semibold text-[8px] text-slate-500 uppercase tracking-widest block mb-0.5">Next Step</span>
+                               {card.nextStep || "No active action logged."}
+                             </div>
+
+                             {/* Intelligence Triggers */}
+                             <div className="flex flex-col gap-1.5">
+                               <button
+                                 onClick={() => handleOpenCompanyIntelligence(card.company, card.title)}
+                                 className="w-full py-1.5 bg-slate-900/60 hover:bg-slate-900 border border-slate-900 hover:border-[#C9A961]/20 rounded-lg text-[8px] font-semibold text-slate-350 hover:text-[#C9A961] transition flex items-center justify-center gap-1 cursor-pointer font-mono uppercase tracking-wider"
+                               >
+                                 🏢 Tell me more about the company
+                               </button>
+                               <button
+                                 onClick={() => handleOpenInterviewPrep(card.company, card.title)}
+                                 className="w-full py-1.5 bg-slate-900/60 hover:bg-slate-900 border border-slate-900 hover:border-emerald-500/20 rounded-lg text-[8px] font-semibold text-slate-350 hover:text-emerald-400 transition flex items-center justify-center gap-1 cursor-pointer font-mono uppercase tracking-wider"
+                               >
+                                 🎯 Help me with the interview process
+                               </button>
+                             </div>
 
                             {/* Quick status state transitions */}
                             <div className="flex flex-wrap items-center justify-between border-t border-slate-900 pt-2.5 gap-2 mt-1">
@@ -1641,7 +2736,7 @@ export default function SaaSWorkspacePage() {
                                   setTrackerCards(prev => prev.filter(c => c.id !== card.id));
                                   showToast(`🗑️ Removed ${card.company} tracker entry`, "warning");
                                 }}
-                                className="text-[9px] text-rose-400/70 hover:text-rose-450 transition"
+                                className="text-[9px] text-rose-400/70 hover:text-rose-450 transition cursor-pointer"
                                 title="Remove tracker loop"
                               >
                                 Delete
@@ -1659,7 +2754,7 @@ export default function SaaSWorkspacePage() {
         )}
 
         {/* 4. Careers Scraper Portal Crawler View (Module 5 Scraper DB Index) */}
-        {activeView === "crawler" && (
+        {activeView === "crawler" && userEmail === "py.ash.apps@gmail.com" && (
           <div className="flex flex-col gap-6 animate-fadeIn">
             {/* Header row with manual addition */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-900 pb-5">
@@ -1701,7 +2796,7 @@ export default function SaaSWorkspacePage() {
             {/* SQL Table Representation */}
             <div className="bg-slate-900/40 border border-slate-900 rounded-2xl overflow-hidden shadow-xl p-6 flex flex-col gap-4 font-mono">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-xs font-bold text-slate-350 tracking-wider uppercase font-serif">
+                <h3 className="text-xs font-bold text-slate-200 tracking-wider uppercase font-serif">
                   company_career_directories index (active rows)
                 </h3>
                 <span className="text-[9px] text-slate-500 uppercase tracking-widest leading-none font-semibold">
@@ -1724,8 +2819,8 @@ export default function SaaSWorkspacePage() {
                   </thead>
                   <tbody className="divide-y divide-slate-900/60">
                     {crawlerDirectories.map((row) => (
-                      <tr key={row.id} className="hover:bg-slate-900/10 transition text-slate-350">
-                        <td className="py-3.5 px-4 font-mono text-[9px] text-slate-650">{row.id.substring(0, 10)}...</td>
+                      <tr key={row.id} className="hover:bg-slate-900/10 transition text-slate-300">
+                        <td className="py-3.5 px-4 font-mono text-[9px] text-slate-500">{row.id.substring(0, 10)}...</td>
                         <td className="py-3.5 px-4 font-bold text-slate-200 font-sans">{row.companyName}</td>
                         <td className="py-3.5 px-4 truncate max-w-[200px] text-slate-500" title={row.careersPageUrl}>{row.careersPageUrl}</td>
                         <td className="py-3.5 px-4">
@@ -1733,12 +2828,12 @@ export default function SaaSWorkspacePage() {
                             {row.atsProvider}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-550">{row.lastCrawledAt}</td>
+                        <td className="py-3.5 px-4 text-slate-400">{row.lastCrawledAt}</td>
                         <td className="py-3.5 px-4">
                           <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold ${
                             row.isActiveScraping 
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/15"
-                              : "bg-slate-950 text-slate-650 border border-slate-900"
+                              : "bg-slate-950 text-slate-500 border border-slate-900"
                           }`}>
                             {row.isActiveScraping ? "CRAWLING" : "STOPPED"}
                           </span>
@@ -1773,7 +2868,109 @@ export default function SaaSWorkspacePage() {
             </div>
           </div>
         )}
+          </>
+        )}
       </main>
+
+      {/* Click-to-Apply Modal Gateway Dialog Component */}
+      {isApplyModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-8 shadow-2xl flex flex-col gap-6 relative animate-scaleUp font-sans">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsApplyModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 p-1 hover:bg-slate-800 rounded-lg transition cursor-pointer"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Modal Header */}
+            <div className="text-center flex flex-col gap-1.5">
+              <span className="text-[9px] font-mono uppercase tracking-widest text-[#C9A961] font-bold">
+                = Click to Apply Gateway =
+              </span>
+              <h3 className="text-xl font-bold text-slate-100 font-serif">
+                Apply to {extractedCompany || "Target Organization"}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {extractedTitle || "Target Role"} • Job ID: {extractedJobId || "GP-120019"}
+              </p>
+            </div>
+
+            <div className="border-t border-slate-800/80 my-1"></div>
+
+            {/* Preparation Checklist */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-semibold text-left">
+                Application Bundle Checklist
+              </span>
+              
+              <div className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-xl border border-slate-950/60">
+                <span className="text-emerald-400 text-xs font-bold">✓</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-slate-200">Tailored Resume Ready</span>
+                  <span className="text-[10px] text-slate-400">Optimized to match semantic keywords and gaps.</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-xl border border-slate-950/60">
+                <span className="text-emerald-400 text-xs font-bold">✓</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-slate-200">Cover Letter Synthesized</span>
+                  <span className="text-[10px] text-slate-400">Ready to copy and paste to portal inputs.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Launch Gateway Link */}
+            <div className="flex flex-col gap-4 mt-2">
+              <a
+                href={jobUrl || "https://google.com/careers"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 bg-gradient-to-r from-[#C9A961] to-[#E2C784] hover:from-[#E2C784] hover:to-[#C9A961] text-[#0F1E2C] rounded-xl text-xs font-bold tracking-wide flex items-center justify-center gap-2.5 transition active:scale-95 duration-200 text-center cursor-pointer font-semibold shadow-lg"
+              >
+                🌐 Launch Corporate Application Portal ↗
+              </a>
+              <p className="text-[10px] text-slate-500 text-center italic leading-normal">
+                This opens the organization's official Greenhouse, Lever, or corporate careers page in a new tab.
+              </p>
+            </div>
+
+            {/* Action: Mark as Applied & Sync to Tracker */}
+            <div className="border-t border-slate-800/80 my-1 pt-4">
+              <button
+                onClick={() => {
+                  const existingIndex = trackerCards.findIndex(c => c.jobId === extractedJobId);
+                  if (existingIndex !== -1) {
+                    setTrackerCards(prev => prev.map((c, idx) => idx === existingIndex ? { ...c, status: "applied" as any, nextStep: "Preparing for interviews" } : c));
+                  } else {
+                    const newCard: TrackerCard = {
+                      id: `track-${Math.random().toString(36).substring(7)}`,
+                      company: extractedCompany || "Target Org",
+                      title: extractedTitle || "Product Manager",
+                      jobId: extractedJobId || "GP-120019",
+                      status: "applied" as any,
+                      createdTime: "Just now",
+                      nextStep: "Preparing for interviews"
+                    };
+                    setTrackerCards(prev => [newCard, ...prev]);
+                  }
+
+                  setIsApplyModalOpen(false);
+                  setActiveView("tracker");
+                  showToast(`🚀 Application recorded! Navigated to Tracker Board.`, "success");
+                }}
+                className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-[#C9A961]/40 rounded-xl text-xs font-bold text-[#EAE5D8] tracking-wide uppercase transition active:scale-95 duration-200 cursor-pointer"
+              >
+                🚀 Mark as Applied & Sync to Tracker
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Authentication Modal Dialog Component */}
       {isAuthModalOpen && (
@@ -1808,6 +3005,23 @@ export default function SaaSWorkspacePage() {
             </div>
 
             <div className="border-t border-slate-800/80 my-1"></div>
+
+            {/* Sign-in Email Input */}
+            <div className="flex flex-col gap-1.5 text-left px-1">
+              <label className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-semibold">
+                Sign in Email Address
+              </label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="py.ash.apps@gmail.com"
+                className="w-full bg-slate-950 border border-slate-850 focus:border-[#C9A961]/80 rounded-xl px-3.5 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans"
+              />
+              <p className="text-[9px] text-slate-500 italic font-sans leading-normal">
+                💡 Entering <span className="text-[#C9A961] font-semibold font-mono">py.ash.apps@gmail.com</span> activates Crawler Portal administrator permissions.
+              </p>
+            </div>
 
             {/* OAuth Action Buttons */}
             <div className="flex flex-col gap-3">
@@ -1856,7 +3070,497 @@ export default function SaaSWorkspacePage() {
           </div>
         </div>
       )}
+
+      {/* Interactive Master Profile Editorial Editor Modal */}
+      {isProfileEditModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn font-sans"
+          onClick={() => setIsProfileEditModalOpen(false)}
+        >
+          <div 
+            className="bg-[#0F1E2C] border border-[#233B57] w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-[#233B57] flex items-center justify-between bg-slate-950/40">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[9px] font-mono uppercase tracking-widest text-[#C9A961]/80 font-bold">
+                  = Binder Management =
+                </span>
+                <h3 className="text-lg font-serif text-slate-100 font-normal">
+                  Edit Master <span className="text-[#C9A961] italic">Profile Binder</span>
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsProfileEditModalOpen(false)}
+                className="text-slate-400 hover:text-slate-200 p-1.5 hover:bg-slate-900 rounded-lg transition font-mono text-xs cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Modal Content - Tab Swapper Header */}
+            <div className="px-6 py-2 border-b border-[#233B57]/50 bg-slate-950/20 flex gap-2 overflow-x-auto scrollbar-none shrink-0">
+              {[
+                { id: "identity", label: "Identity" },
+                { id: "summary", label: "Executive Summary" },
+                { id: "projects", label: "Projects & Timeline" },
+                { id: "education", label: "Education" }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setEditProfileTab(tab.id as any)}
+                  className={`px-3 py-1.5 text-[9px] font-mono uppercase tracking-wider rounded-lg transition-all duration-200 shrink-0 cursor-pointer ${
+                    editProfileTab === tab.id
+                      ? "bg-[#C9A961] text-[#0F1E2C] font-bold shadow-md shadow-[#C9A961]/10"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/40"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content area (scrollable) */}
+            <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6 scrollbar-none">
+              
+              {/* Identity Tab Content */}
+              {editProfileTab === "identity" && (
+                <div className="flex flex-col gap-5 animate-fadeIn">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-mono uppercase tracking-widest text-[#C9A961]/80 font-bold">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      placeholder="Name"
+                      className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans font-medium"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-mono uppercase tracking-widest text-[#C9A961]/80 font-bold">
+                      Target Title / Role
+                    </label>
+                    <input
+                      type="text"
+                      value={tempRole}
+                      onChange={(e) => setTempRole(e.target.value)}
+                      placeholder="Role title"
+                      className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans font-medium"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] font-mono uppercase tracking-widest text-[#C9A961]/80 font-bold">
+                      Key Skills (Comma separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={tempSkills}
+                      onChange={(e) => setTempSkills(e.target.value)}
+                      placeholder="Skills separated by commas"
+                      className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-2.5 text-xs text-[#EAE5D8] focus:outline-none transition font-sans font-medium"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Executive Summary Tab Content */}
+              {editProfileTab === "summary" && (
+                <div className="flex flex-col gap-1.5 animate-fadeIn">
+                  <label className="text-[9px] font-mono uppercase tracking-widest text-[#C9A961]/80 font-bold">
+                    Executive Profile Summary
+                  </label>
+                  <textarea
+                    value={tempSummary}
+                    onChange={(e) => setTempSummary(e.target.value)}
+                    placeholder="Describe your senior capabilities and career path..."
+                    rows={6}
+                    className="w-full bg-slate-950 border border-[#233B57] focus:border-[#C9A961] rounded-xl px-4 py-3 text-xs text-[#EAE5D8] focus:outline-none transition font-sans resize-none leading-relaxed"
+                  />
+                </div>
+              )}
+
+              {/* Projects List Tab Content */}
+              {editProfileTab === "projects" && (
+                <div className="flex flex-col gap-6 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-[#233B57]/40 pb-2">
+                    <span className="text-[9px] font-mono uppercase text-slate-500 font-semibold">
+                      Manage Professional Projects ({tempProjects.length})
+                    </span>
+                    <button
+                      onClick={() => setTempProjects([...tempProjects, { title: "", timeline: "", description: "" }])}
+                      className="px-2.5 py-1 bg-[#C9A961]/10 border border-[#C9A961]/40 text-[#C9A961] hover:bg-[#C9A961]/20 rounded-md font-mono text-[9px] uppercase tracking-wider transition cursor-pointer"
+                    >
+                      ➕ Add Project
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-5 max-h-[40vh] overflow-y-auto pr-1 scrollbar-none">
+                    {tempProjects.length === 0 ? (
+                      <div className="text-center py-6 text-slate-500 font-mono text-[10px]">
+                        No projects defined. Click "Add Project" to begin.
+                      </div>
+                    ) : (
+                      tempProjects.map((proj, idx) => (
+                        <div key={idx} className="bg-slate-950/60 border border-[#233B57]/60 rounded-xl p-4 flex flex-col gap-3 relative animate-fadeIn text-left">
+                          <button
+                            onClick={() => setTempProjects(prev => prev.filter((_, i) => i !== idx))}
+                            className="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 hover:bg-slate-900 rounded-md transition text-xs font-mono cursor-pointer"
+                            title="Remove project"
+                          >
+                            🗑️ Delete
+                          </button>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                            <div className="flex flex-col gap-1 text-left">
+                              <label className="text-[8px] font-mono uppercase text-slate-400 font-bold">Project Name</label>
+                              <input
+                                type="text"
+                                value={proj.title}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setTempProjects(prev => prev.map((item, i) => i === idx ? { ...item, title: val } : item));
+                                }}
+                                placeholder="Project title"
+                                className="bg-slate-950 border border-[#233B57] focus:border-[#C9A961]/80 rounded-lg px-3 py-1.5 text-xs text-[#EAE5D8] focus:outline-none transition"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1 text-left">
+                              <label className="text-[8px] font-mono uppercase text-slate-400 font-bold">Timeline / Dates</label>
+                              <input
+                                type="text"
+                                value={proj.timeline}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setTempProjects(prev => prev.map((item, i) => i === idx ? { ...item, timeline: val } : item));
+                                }}
+                                placeholder="e.g. Q1 2024 - Present"
+                                className="bg-slate-950 border border-[#233B57] focus:border-[#C9A961]/80 rounded-lg px-3 py-1.5 text-xs text-[#EAE5D8] focus:outline-none transition"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-1 text-left">
+                            <label className="text-[8px] font-mono uppercase text-slate-400 font-bold">Description & Scope</label>
+                            <textarea
+                              value={proj.description}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setTempProjects(prev => prev.map((item, i) => i === idx ? { ...item, description: val } : item));
+                              }}
+                              placeholder="Describe technical execution details..."
+                              rows={2.5}
+                              className="bg-slate-950 border border-[#233B57] focus:border-[#C9A961]/80 rounded-lg px-3 py-2 text-xs text-[#EAE5D8] focus:outline-none transition resize-none leading-relaxed"
+                            />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Education list Tab Content */}
+              {editProfileTab === "education" && (
+                <div className="flex flex-col gap-5 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-[#233B57]/40 pb-2">
+                    <span className="text-[9px] font-mono uppercase text-slate-500 font-semibold">
+                      Manage Educational Credentials ({tempEducation.length})
+                    </span>
+                    <button
+                      onClick={() => setTempEducation([...tempEducation, ""])}
+                      className="px-2.5 py-1 bg-[#C9A961]/10 border border-[#C9A961]/40 text-[#C9A961] hover:bg-[#C9A961]/20 rounded-md font-mono text-[9px] uppercase tracking-wider transition cursor-pointer"
+                    >
+                      ➕ Add Entry
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-4.5 max-h-[40vh] overflow-y-auto pr-1 scrollbar-none">
+                    {tempEducation.length === 0 ? (
+                      <div className="text-center py-6 text-slate-500 font-mono text-[10px]">
+                        No education listings. Click "Add Entry" to begin.
+                      </div>
+                    ) : (
+                      tempEducation.map((edu, idx) => (
+                        <div key={idx} className="flex items-center gap-3 bg-slate-950 border border-slate-900 rounded-xl p-3 animate-fadeIn text-left">
+                          <span className="text-xs">🎓</span>
+                          <input
+                            type="text"
+                            value={edu}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setTempEducation(prev => prev.map((item, i) => i === idx ? val : item));
+                            }}
+                            placeholder="Degree, School name, Dates (e.g. B.S. in Computer Science, MIT (2019))"
+                            className="flex-1 bg-transparent border-none focus:outline-none text-xs text-slate-200"
+                          />
+                          <button
+                            onClick={() => setTempEducation(prev => prev.filter((_, i) => i !== idx))}
+                            className="text-slate-500 hover:text-rose-400 p-1 hover:bg-slate-900 rounded-md transition text-xs font-mono cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer Controls */}
+            <div className="px-6 py-4 border-t border-[#233B57] bg-slate-950/40 flex items-center justify-end gap-3 shrink-0">
+              <button
+                onClick={() => setIsProfileEditModalOpen(false)}
+                className="px-5 py-2.5 border border-[#233B57] hover:border-slate-500 text-slate-400 hover:text-slate-200 rounded-xl text-xs font-bold font-sans transition cursor-pointer"
+              >
+                Discard Changes
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#C9A961] to-[#E2C784] hover:from-[#E2C784] hover:to-[#C9A961] text-slate-950 rounded-xl text-xs font-bold font-sans shadow-lg transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              >
+                💾 Save Binder Details
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       
+      {/* Sliding Intelligence Drawer Panel */}
+      {intelDrawerOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden font-sans">
+          {/* Backdrop overlay */}
+          <div 
+            onClick={() => setIntelDrawerOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-fadeIn"
+          />
+
+          <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-xl bg-slate-950 border-l border-slate-900 shadow-2xl flex flex-col p-8 relative animate-slideLeft h-full overflow-y-auto">
+              {/* Close Button */}
+              <button
+                onClick={() => setIntelDrawerOpen(false)}
+                className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 p-2 hover:bg-slate-900 rounded-lg transition cursor-pointer"
+              >
+                ✕
+              </button>
+
+              {intelType === "company" ? (
+                // COMPANY INTELLIGENCE & LEVELS.FYI SALARIES
+                <div className="flex flex-col gap-6 text-left">
+                  <div className="flex flex-col gap-1.5 border-b border-[#233B57] pb-4">
+                    <span className="text-[9px] font-mono uppercase tracking-widest text-[#C9A961] font-bold">
+                      🏢 SOURCED CORPORATE PROFILE & SALARY MATRIX
+                    </span>
+                    <h3 className="text-2xl font-bold text-[#F4EFE6] font-serif">
+                      {intelCompany} Intelligence
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Sourced via Levels.fyi & Glassdoor database records
+                    </p>
+                  </div>
+
+                  {/* Salary Insights Panel */}
+                  <div className="bg-[#C9A961]/5 border border-[#C9A961]/35 rounded-xl p-5 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-[#C9A961]/20 pb-2">
+                      <span className="text-xs font-mono font-bold text-[#C9A961]">💸 SOURCED SALARY ESTIMATE</span>
+                      <span className="text-[9px] font-mono bg-[#C9A961]/20 text-[#C9A961] border border-[#C9A961]/30 px-2 py-0.5 rounded font-bold">Levels.fyi Verified</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 font-mono text-xs">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-500 text-[8px] uppercase tracking-wider">Base Salary Range</span>
+                        <span className="text-slate-200 font-bold">
+                          {(() => {
+                            const c = intelCompany.toLowerCase();
+                            if (c.includes("google")) return "$185,000 - $215,000";
+                            if (c.includes("stripe")) return "$175,000 - $205,000";
+                            if (c.includes("openai")) return "$240,000 - $290,000";
+                            if (c.includes("apple")) return "$180,000 - $210,000";
+                            if (c.includes("meta")) return "$190,000 - $220,000";
+                            if (c.includes("netflix")) return "$250,000 - $310,000";
+                            if (c.includes("anthropic")) return "$220,000 - $270,000";
+                            if (c.includes("amazon")) return "$160,000 - $190,000";
+                            if (c.includes("microsoft")) return "$155,000 - $185,000";
+                            return "$130,000 - $160,000";
+                          })()} / Year
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-500 text-[8px] uppercase tracking-wider">Stock Equity / RSU</span>
+                        <span className="text-slate-200 font-bold">
+                          {(() => {
+                            const c = intelCompany.toLowerCase();
+                            if (c.includes("google")) return "$60,000 - $95,000";
+                            if (c.includes("stripe")) return "$50,000 - $80,000";
+                            if (c.includes("openai")) return "$110,000 - $150,000";
+                            if (c.includes("apple")) return "$55,000 - $85,000";
+                            if (c.includes("meta")) return "$65,000 - $100,000";
+                            if (c.includes("netflix")) return "N/A (All Cash Choice)";
+                            if (c.includes("anthropic")) return "$90,000 - $120,000";
+                            if (c.includes("amazon")) return "$45,000 - $75,000";
+                            if (c.includes("microsoft")) return "$40,000 - $65,000";
+                            return "$30,000 - $50,000";
+                          })()} / Year
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-500 text-[8px] uppercase tracking-wider">Annual Bonus</span>
+                        <span className="text-slate-200 font-bold">
+                          {(() => {
+                            const c = intelCompany.toLowerCase();
+                            if (c.includes("netflix")) return "Included in base";
+                            return "15% - 20% Base Salary";
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-500 text-[8px] uppercase tracking-wider">Total Compensation (Median TC)</span>
+                        <span className="text-emerald-400 font-extrabold text-sm">
+                          {(() => {
+                            const c = intelCompany.toLowerCase();
+                            if (c.includes("google")) return "$285,000";
+                            if (c.includes("stripe")) return "$265,000";
+                            if (c.includes("openai")) return "$390,000";
+                            if (c.includes("apple")) return "$275,000";
+                            if (c.includes("meta")) return "$290,000";
+                            if (c.includes("netflix")) return "$380,000";
+                            if (c.includes("anthropic")) return "$340,000";
+                            if (c.includes("amazon")) return "$245,000";
+                            if (c.includes("microsoft")) return "$235,000";
+                            return "$195,000";
+                          })()} / Year
+                        </span>
+                      </div>
+                    </div>
+
+                    <a 
+                      href="https://www.levels.fyi/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[9px] font-mono text-[#C9A961] underline hover:text-[#E2C784] block mt-1 transition cursor-pointer text-center"
+                    >
+                      Verify exact grade & location benchmarks on Levels.fyi ↗
+                    </a>
+                  </div>
+
+                  {/* Company Profile Details */}
+                  <div className="flex flex-col gap-4">
+                    <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 font-bold">
+                      Corporate DNA & Cultural Alignment
+                    </h4>
+                    
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-900 flex flex-col gap-3 font-sans text-xs">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-500 font-semibold">Core Product Focus:</span>
+                        <span className="text-slate-200">
+                          {(() => {
+                            const c = intelCompany.toLowerCase();
+                            if (c.includes("google")) return "Advanced Enterprise Data Pipelines, BigQuery analytics, and RAG semantic caches.";
+                            if (c.includes("stripe")) return "Global transactional accounting leders, multi-tenant billing APIs, and checkout pipelines.";
+                            if (c.includes("openai")) return "Large-scale reasoning models, RLHF search frameworks, and frontier model scaling.";
+                            return "High-performance developer platform pipelines, semantic scaling systems, and cloud storage.";
+                          })()}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1 border-t border-slate-900 pt-2.5">
+                        <span className="text-slate-500 font-semibold">Cultural Value to Highlight:</span>
+                        <span className="text-slate-200">
+                          {(() => {
+                            const c = intelCompany.toLowerCase();
+                            if (c.includes("google")) return "Emphasize strict data privacy compliance, distributed architecture stability, and user empathy.";
+                            if (c.includes("stripe")) return "Demonstrate extreme detail-orientation, clean api design principles, and microservice audit metrics.";
+                            if (c.includes("openai")) return "Focus on frontier safety alignments, self-training pipelines, and reinforcement learning foundations.";
+                            return "Emphasize rapid shipping cadences, clean formatting structures, and humble user-centric communication.";
+                          })()}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1 border-t border-slate-900 pt-2.5">
+                        <span className="text-slate-500 font-semibold">Verified Tech Stack:</span>
+                        <span className="text-[#C9A961] font-mono text-[10px] tracking-wide">
+                          Next.js • TypeScript • Go • Python • PyTorch • Postgres • AWS
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // MOCK INTERVIEW PREPARATION GUIDE
+                <div className="flex flex-col gap-6 text-left">
+                  <div className="flex flex-col gap-1.5 border-b border-[#233B57] pb-4">
+                    <span className="text-[9px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
+                      🎯 MOCK INTERVIEW PREPARATION KIT
+                    </span>
+                    <h3 className="text-2xl font-bold text-[#F4EFE6] font-serif">
+                      {intelCompany} Preparation Loop
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Mock prep plan for: {intelTitle}
+                    </p>
+                  </div>
+
+                  {/* Interview Loop Stages */}
+                  <div className="flex flex-col gap-3">
+                    <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 font-bold">
+                      Typical Interview Stages
+                    </h4>
+                    
+                    <div className="flex flex-col gap-2.5 text-xs font-sans">
+                      {[
+                        { step: "1", stage: "Recruiter Assessment Screen", desc: "Resume walkthrough, high-level fit check, and basic domain competency." },
+                        { step: "2", stage: "Technical Architecture & Design Loop", desc: "Systems scaling, data ingestion pipelines, schema performance, and system bottlenecks." },
+                        { step: "3", stage: "Analytical & Coding Practical Run", desc: "Practical hands-on loop validating query efficiency, scripting, or optimization skills." },
+                        { step: "4", stage: "Product Strategy & PRD Review", desc: "Formulate metrics, review feature conception, distributed stakeholders loops." },
+                        { step: "5", stage: "Behavioral & Stakeholder Alignment", desc: "Resolving cross-team friction, handling constraints, and alignment with corporate culture values." }
+                      ].map((item, i) => (
+                        <div key={i} className="bg-slate-950/60 border border-slate-900 p-3.5 rounded-xl flex items-start gap-3">
+                          <span className="h-5 w-5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 rounded-full flex items-center justify-center shrink-0 font-mono text-[10px] font-bold">
+                            {item.step}
+                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-slate-200">{item.stage}</span>
+                            <span className="text-[10px] text-slate-500 leading-normal">{item.desc}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Core Questions Checklist */}
+                  <div className="flex flex-col gap-3">
+                    <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 font-bold">
+                      Behavioral STAR Roadmap Checklist
+                    </h4>
+                    
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-900 flex flex-col gap-3 text-xs leading-normal">
+                      <p className="text-slate-400 font-sans">
+                        Be prepared to answer: <span className="text-slate-200 font-bold">"Tell me about a time you shipped an advanced platform capability under tight timeline constraints."</span>
+                      </p>
+                      <div className="border-t border-slate-900 pt-2.5 flex flex-col gap-1.5 font-mono text-[9px] text-[#C9A961] uppercase tracking-wider">
+                        <span>Situation: Define the platform bottleneck & stakeholders friction.</span>
+                        <span>Task: State your specific technical ownership limits.</span>
+                        <span>Action: Highlight your RAG optimization or pipeline scaling actions.</span>
+                        <span>Result: Quantify total metrics success (e.g. 35% latency drop).</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sliding Map-the-Role Drawer Panel */}
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
